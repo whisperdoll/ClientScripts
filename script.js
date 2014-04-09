@@ -133,6 +133,13 @@ function printBorder(colour)
 	print("<hr>");
 }
 
+function stripHTML(string) // i stole this hahas
+{
+    var regex = /(<([^>]+)>)/ig;
+    string = string.replace(regex, "");
+    return string;
+}
+
 function header(text)
 {
 	return "<b><u>" + text + "</u></b>";
@@ -143,6 +150,15 @@ function center(text)
 	return "<table width='100%'><tr><td align='center'>" + text + "</td></tr></table>";
 }
 
+function say(message, channel)
+{
+	if (channel === undefined)
+	{
+		channel = client.currentChannel();
+	}
+	
+	network.sendChanMessage(channel, message);
+}
 
 
 ({
@@ -168,7 +184,24 @@ beforeSendMessage: function(message, channel)
 		sys.stopEvent();
 		handleCommand(m.split(" ")[0].substr(cs.length), m.substr(m.indexOf(" ") + 1).split(";"), channel);
 	}
+},
+beforeChannelMessage: function (message, channel, html)
+{
+	var cs = getVal("cmdSymbol");
+	if (message.indexOf(":") !== -1)
+	{
+		sys.stopEvent();
+		var name = stripHTML(message.getUser());
+		var color = client.color(client.id(name));
+		var msg = message.getMessage();
+		
+		// ok so we can just prent whatever they said but make their name clickable
+		// todo: if theyre auth make it look like it etc
+		
+		print("<a href='po:send/" + cs + "challenge " + name + "'><font color='" + color + "'><b>" + name + ": </b></font></a>" + msg, channel);
+	}
 }
+
 
 })
 
@@ -245,6 +278,18 @@ function handleCommand(command, data, channel)
 		{
 			network.sendPM(id, data[1]);
 		}
+	}
+	else if (command === "challenge")
+	{
+		var id = client.id(data[0]);
+		
+		if (id === -1)
+		{
+			printMessage("Cannot challenge that player!");
+			return;
+		}
+		
+		client.seeInfo(id);
 	}
 	
 	
