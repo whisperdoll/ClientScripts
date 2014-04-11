@@ -118,15 +118,38 @@ String.prototype.parseCmdDesc = function()
 	return ret;
 };
 
+String.prototype.fixLinks = function()
+{
+	// oh god
+	
+	var s = this;
+	var words = s.split(" ");
+	
+	for (var i = 0; i < words.length; i++)
+	{
+		if ( (cmp(words[i].substr(0, 7), "http://") || cmp(words[i].substr(0, 8), "https://") )&& words[i].indexOf(".") !== -1)
+		{
+			words[i] = "<a href='" + words[i] + "'>" + words[i] + "</a>";
+		}
+	}
+	
+	return words.join(" ");
+};
+
 
 function isPlayerBattling(id)
 {
 	if (client.player == null)
 	{
-	  return false;
+		return false;
 	}
 	
 	return (client.player(id).flags & (1 << 2)) > 0;
+}
+
+function isPlayerOnline(name)
+{
+	return client.id(name) !== -1;
 }
 
 function print(message, channel)
@@ -291,7 +314,7 @@ beforeSendMessage: function(message, channel)
 },
 beforeChannelMessage: function(message, channel, html)
 {
-	if (message.indexOf(": ") !== -1 && !html)
+	if (message.indexOf(": ") !== -1 && isPlayerOnline(message.getUser()))
 	{
 		var name = message.getUser();
 		var msg = message.getMessage();
@@ -303,6 +326,9 @@ beforeChannelMessage: function(message, channel, html)
 		// ok lets do this
 		
 		var cmd = "po:send/" + getVal("cmdSymbol", "~") + "lookup " + name;
+		
+		if (msg.indexOf("http") !== -1)
+			msg = msg.fixLinks();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> " + msg, channel);
 	}
