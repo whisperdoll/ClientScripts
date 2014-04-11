@@ -17,6 +17,24 @@ var commands = [
 	"ranking [name] - Opens ranking window and selects [name]"
 	];
 
+	
+function say(message, channel) 
+{ 
+    if (channel === undefined) 
+    {
+        channel = client.currentChannel(); 
+    } 
+  
+    network.sendChanMessage(channel, message); 
+} 
+	
+function randomInt(arg1, arg2)
+{
+	if (arg2 !== undefined) // randomInt(min, max)
+		return Math.floor(Math.random() * (arg2 - arg1)) + arg1;
+	else // randomInt(max)
+		return Math.floor(Math.random() * arg1);
+}
 
 function cmp(x1, x2)
 {
@@ -34,7 +52,7 @@ function cmp(x1, x2)
 	return x1 === x2;
 }
 
-function getVal(key)
+function getVal(key, def)
 {
 	var lines = sys.getFileContent(settingsPath).split("\n");
 	
@@ -46,8 +64,8 @@ function getVal(key)
 		}
 	}
 	
-	return undefined;
-};
+	return def;
+}
 
 function setVal(key, val)
 {
@@ -133,13 +151,6 @@ function printBorder(colour)
 	print("<hr>");
 }
 
-function stripHTML(string) // i stole this hahas
-{
-    var regex = /(<([^>]+)>)/ig;
-    string = string.replace(regex, "");
-    return string;
-}
-
 function header(text)
 {
 	return "<b><u>" + text + "</u></b>";
@@ -150,15 +161,96 @@ function center(text)
 	return "<table width='100%'><tr><td align='center'>" + text + "</td></tr></table>";
 }
 
-function say(message, channel)
+Array.prototype.shuffle = function()
 {
-	if (channel === undefined)
+	var count = this.length;
+	var ret = new Array();
+	var rands = new Array();
+	var nos = new Array();
+
+	for (var i = 0; i < count; i++)
 	{
-		channel = client.currentChannel();
+		nos.push(i);
+	}
+
+	for (var i = 0; i < count; i++)
+	{
+		var r = randomInt(nos.length);
+		rands.push(nos[r]);
+		nos.removeAt(r);
+	}
+
+	for (var i = 0; i < count; i++)
+	{
+		ret.push(this[rands[i]]);
+	}
+
+	for (var i = 0; i < count; i++)
+	{
+		this.removeAt(0);
+	}
+
+	for (var i = 0; i < count; i++)
+	{
+		this.push(ret[i]);
 	}
 	
-	network.sendChanMessage(channel, message);
+	return;
+};
+
+Array.prototype.removeAt = function(ind)
+{
+	this.splice(ind, 1);
+
+	return;
+};
+
+function sayMispelled(m, channel)
+{
+	var words = m.split(" ");
+	var newwords = "";
+			
+	for (var i = 0; i < words.length; i++)
+	{
+		var word = words[i];
+		var fl = word[0];
+		var ll = word[word.length - 1];
+			
+		var letters = new Array();
+				
+		if (word.length === 1)
+		{
+			newwords += word + " ";
+			continue;
+		}
+				
+		for (var j = 1; j < word.length - 1; j++)
+		{
+			letters.push(word[j]);
+			
+			if (randomInt(6) === 2)
+			{
+				var l = "qwertyuiop[]\asdfghjkl;'zxcvbnm,./";
+				letters.push(l[randomInt(l.length)]);
+			}
+		}
+				
+		letters.shuffle();
+				
+		var newword = fl + letters.join("") + ll;
+		newwords += newword + " ";
+	}
+			
+	newwords = newwords.substr(0, newwords.length - 1); // remove last space
+			
+	say(newwords, channel);
 }
+
+
+
+
+
+
 
 
 ({
@@ -173,6 +265,9 @@ clientStartUp: function()
 		setVal("botName", "Delibird");
 		setVal("botColour", "red");
 	}
+	
+	printMessage("Hey, you're running cool client scripts, " + client.ownName() + "!");
+	printMessage("Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
 },
 beforeSendMessage: function(message, channel)
 {
@@ -184,24 +279,33 @@ beforeSendMessage: function(message, channel)
 		sys.stopEvent();
 		handleCommand(m.split(" ")[0].substr(cs.length), m.substr(m.indexOf(" ") + 1).split(";"), channel);
 	}
-},
-beforeChannelMessage: function (message, channel, html)
-{
-	var cs = getVal("cmdSymbol");
-	if (message.indexOf(":") !== -1)
+	else
 	{
-		sys.stopEvent();
-		var name = stripHTML(message.getUser());
-		var color = client.color(client.id(name));
+		if (getVal("misspell", false))
+		{
+			sys.stopEvent();
+			sayMispelled(m, channel);
+		}
+	}
+},
+beforeChannelMessage: function(message, channel, html)
+{
+	if (message.indexOf(": ") !== -1 && !html)
+	{
+		var name = message.getUser();
 		var msg = message.getMessage();
+		var id = client.id(name);
+		var colour = client.color(id);
 		
-		// ok so we can just prent whatever they said but make their name clickable
-		// todo: if theyre auth make it look like it etc
+		sys.stopEvent();
 		
-		print("<a href='po:send/" + cs + "challenge " + name + "'><font color='" + color + "'><b>" + name + ": </b></font></a>" + msg, channel);
+		// ok lets do this
+		
+		var cmd = "po:send/" + getVal("cmdSymbol", "~") + "lookup " + name;
+		
+		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> " + msg, channel);
 	}
 }
-
 
 })
 
@@ -245,7 +349,8 @@ function handleCommand(command, data, channel)
 			+ "Tiers: " + client.tiers(id).join(", ") + "<br />"
 			+ "Actions: <a href='po:pm/" + id + "'>PM</a>, <a href='po:info/" + id + "'>Challenge</a>" 
 				+ (isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "") + ", "
-				+ "<a href='po:ignore/" + id + "'>Toggle Ignore</a>" // dont say ignore/unignore bc after you ignore 'toggle ignore' is still relevant
+				+ "<a href='po:ignore/" + id + "'>Toggle Ignore</a>, " // dont say ignore/unignore bc after you ignore 'toggle ignore' is still relevant
+				+ "<a href='po:send/" + getVal("cmdSymbol", "~") + "viewrank " + user + "'>View Rank</a>"
 			
 			+ "</h4>"));
 		print("<hr>");
@@ -279,17 +384,35 @@ function handleCommand(command, data, channel)
 			network.sendPM(id, data[1]);
 		}
 	}
-	else if (command === "challenge")
+	else if (command === "changename")
+	{
+		var name = data[0];
+		
+		client.changeName(name);
+	}
+	else if (command === "setcs")
+	{
+		var symbol = data[0];
+		
+		if (symbol !== undefined && symbol.length === 1)
+		{
+			setVal("cmdSymbol", symbol);
+			printMessage("Changed command symbol to: <b>" + symbol + "</b>");
+		}
+		else
+		{
+			printMessage("There was something wrong with the command symbol specified. Command symbols must be one character in length! <b>You've got more sense than that, "
+				+ client.ownName() + "!</b>");
+		}
+	}
+	else if (command === "viewrank")
 	{
 		var id = client.id(data[0]);
 		
 		if (id === -1)
-		{
-			printMessage("Cannot challenge that player!");
 			return;
-		}
-		
-		client.seeInfo(id);
+			
+		client.seeRanking(client.id(data[0]));
 	}
 	
 	
@@ -298,7 +421,6 @@ function handleCommand(command, data, channel)
 		printMessage("<b>" + cs + command + "</b> is not a command! <a href='po:send/" + cs + "commands'>View commands</a>");
 	}
 }
-
 
 
 
