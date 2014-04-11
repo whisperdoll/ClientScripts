@@ -5,6 +5,7 @@
 var settingsPath = "CSSettings.txt";
 var network = client.network();
 
+var star = "<img alt='' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJQSURBVHjajFJNTxNRFD3vY6aVVghQmyAChRhiJOLCHSvYukJcmbjQRFyRqCujexbudGvY+Qf8F8aEBdTPkEBpClKrA6ZfM0znveedmVbahCa+mZO8eXPPufeed1njBYCAIAgMvUvjNQw9As96zk0bPHr7rBZyPDf0iOcGV2k/1S+sv4DGY744meKLU6lw//8CYWk+RtlE+gG/Ogw+Oww2kXpIZ5no37kCnZ5URB6Eh6di4fIYpIhCxC3a+3hCXg1RNegWkoTbZN5NOpxGUs6wATnGxtLX+NwloEnueho8NwI+n3lpKrW75lSV4asiqewT9xNrPEdeLE7e4NezwIAAu0iakuAS2aV0p5TOJwSERgBTbUXC+uAEaq/8lVPm+/qLU4jImRQJU1c1CqpTP24XakEkxqxE1Kou/ylQBfeoQeTNUWM5eLtdNKVqPBNNyuyaXnhhNaT/s4Zgc/fA1L0Vaj0fm2iTiOMtB+8+75tSPZyBmOC20VQx2Wki2C6UjOvfocRbvdeYxJapeOv6mxMLuF0CoZhnoCs1mIb/isibZ7eguy7VxjhLJ8msdt+hUGggtcSoNWHZUALZiMM6AqxrgGw+x6QVZw0YzLFLAnSNkozTFGBZYELMG63OFZAsYc0yaQNVH6rwC7r0+yOMUTw7uiCzI2BJErLkDDxlE8+PPehMoabSEvKKLh6j9WFnX+2W10wQLBmlltSPyqr/fW9HOydgtpim+PEO76wCiQFTbR4GTnGDzt7Q99G/keXYML7/vlU8XINgK2TihY5tfwUYAAPpHgSOMoDeAAAAAElFTkSuQmCC' />";
 
 // commands format: command [param1];[param2] - desc
 // params not required obv
@@ -350,7 +351,7 @@ function handleCommand(command, data, channel)
 			+ "Actions: <a href='po:pm/" + id + "'>PM</a>, <a href='po:info/" + id + "'>Challenge</a>" 
 				+ (isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "") + ", "
 				+ "<a href='po:ignore/" + id + "'>Toggle Ignore</a>, " // dont say ignore/unignore bc after you ignore 'toggle ignore' is still relevant
-				+ "<a href='po:send/" + getVal("cmdSymbol", "~") + "viewrank " + user + "'>View Rank</a>"
+				+ "<a href='po:send/" + getVal("cmdSymbol", "~") + "ranking " + user + "'>View Rank</a>"
 			
 			+ "</h4>"));
 		print("<hr>");
@@ -404,15 +405,6 @@ function handleCommand(command, data, channel)
 			printMessage("There was something wrong with the command symbol specified. Command symbols must be one character in length! <b>You've got more sense than that, "
 				+ client.ownName() + "!</b>");
 		}
-	}
-	else if (command === "viewrank")
-	{
-		var id = client.id(data[0]);
-		
-		if (id === -1)
-			return;
-			
-		client.seeRanking(client.id(data[0]));
 	}
 	
 	
