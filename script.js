@@ -1,5 +1,5 @@
 /* ***************************************************** */
-/* ********* SONGSING BUILT THESE HAVE FUN ! *********** */
+/* ********* YOU'LL NEVER AMOUNT TO ANYTHING *********** */
 /* ***************************************************** */
 
 var settingsPath = "CSSettings.txt";
@@ -303,8 +303,8 @@ clientStartUp: function()
 		setVal("botColour", "red");
 	}
 	
-	printMessage("Hey, you're running cool client scripts, " + client.ownName() + "!");
-	printMessage("Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
+	client.printHtml(botHTML() + "Hey, you're running cool client scripts, guy!");
+	client.printHtml(botHTML() + "Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
 },
 beforeSendMessage: function(message, channel)
 {
