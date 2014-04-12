@@ -21,7 +21,9 @@ var commands = [
 	"setcs [symbol] - Changes your command symbol to [symbol]",
 	"setbotname [name] - Changes my name to [name]",
 	"setbotcolour [colour] - Changes my colour to [colour]",
-	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!"
+	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
+	"emotes - Shows available emotes",
+	"emotes [on/off] - Enables/disables emotes"
 	];
 
 	
@@ -376,7 +378,7 @@ beforeChannelMessage: function(message, channel, html)
 		
 		var cmd = "po:send/" + getVal("cmdSymbol", "~") + "lookup " + name;
 	
-		msg = escapeHTML(msg).replace(new RegExp("(" + escapeHTML(client.ownName()) + ")", "gi"), "<b><i>$1</i></b><ping />");
+		msg = escapeHTML(msg).replace(new RegExp("( " + escapeHTML(client.ownName()) + ")", "gi"), " <b><i>$1</i></b><ping />");
 			
 		if (getVal("emotes", "on") === "on")
 		{
