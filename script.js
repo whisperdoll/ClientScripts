@@ -378,13 +378,13 @@ beforeChannelMessage: function(message, channel, html)
 		
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
+	
+		msg = escapeHTML(msg).replace(new RegExp("(" + escapeHTML(client.ownName()) + ")", "gi"), "<b><i>$1</i></b><ping />");
 			
 		if (getVal("emotes", "on") === "on")
 		{
 			msg = msg.withEmotes();
 		}
-	
-		msg = escapeHTML(msg).replace(new RegExp("(" + escapeHTML(client.ownName()) + ")", "gi"), "<b><i>$1</i></b><ping />");
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
 			 + msg, channel);
