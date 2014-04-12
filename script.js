@@ -6,6 +6,7 @@ var settingsPath = "CSSettings.txt";
 var network = client.network();
 
 var star = "<img alt='' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJQSURBVHjajFJNTxNRFD3vY6aVVghQmyAChRhiJOLCHSvYukJcmbjQRFyRqCujexbudGvY+Qf8F8aEBdTPkEBpClKrA6ZfM0znveedmVbahCa+mZO8eXPPufeed1njBYCAIAgMvUvjNQw9As96zk0bPHr7rBZyPDf0iOcGV2k/1S+sv4DGY744meKLU6lw//8CYWk+RtlE+gG/Ogw+Oww2kXpIZ5no37kCnZ5URB6Eh6di4fIYpIhCxC3a+3hCXg1RNegWkoTbZN5NOpxGUs6wATnGxtLX+NwloEnueho8NwI+n3lpKrW75lSV4asiqewT9xNrPEdeLE7e4NezwIAAu0iakuAS2aV0p5TOJwSERgBTbUXC+uAEaq/8lVPm+/qLU4jImRQJU1c1CqpTP24XakEkxqxE1Kou/ylQBfeoQeTNUWM5eLtdNKVqPBNNyuyaXnhhNaT/s4Zgc/fA1L0Vaj0fm2iTiOMtB+8+75tSPZyBmOC20VQx2Wki2C6UjOvfocRbvdeYxJapeOv6mxMLuF0CoZhnoCs1mIb/isibZ7eguy7VxjhLJ8msdt+hUGggtcSoNWHZUALZiMM6AqxrgGw+x6QVZw0YzLFLAnSNkozTFGBZYELMG63OFZAsYc0yaQNVH6rwC7r0+yOMUTw7uiCzI2BJErLkDDxlE8+PPehMoabSEvKKLh6j9WFnX+2W10wQLBmlltSPyqr/fW9HOydgtpim+PEO76wCiQFTbR4GTnGDzt7Q99G/keXYML7/vlU8XINgK2TihY5tfwUYAAPpHgSOMoDeAAAAAElFTkSuQmCC' />";
+var smile = "<img alt='' src='data:image/gif;base64,R0lGODlhFgATANQAAAAAABwcHCwsLEhISIhgAOw4DP9ACKSMAP9sPMSsANSwHP/QKP/gDP/wLP/4aPDw8P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkZABAALAAAAAAWABMAAAWhYBBAZGmepRgIIupCIrsK7GvO9eo4ox00ixqs0dj1UD/GQnH8NRjMAGAKEC2uzNtTQUgwGLtvgoA9kgLQL3GtXGZPAcV6DrwuzakvYa4kv5ENAg8DREqCAwt4Zw6BA3tfQY4KfylrhAosCgtkdygACAZECl9KmgugAJ4GBgVyDAcHpasFqZ4FBQ0JB08HCQu3tS5OfF+Uwk6kDC02NyrLKCEAOw==' />";
 
 // commands format: command [param1];[param2] - desc
 // params not required obv
@@ -19,7 +20,8 @@ var commands = [
 	"changename [name] - Attempts to change your name to [name]",
 	"setcs [symbol] - Changes your command symbol to [symbol]",
 	"setbotname [name] - Changes my name to [name]",
-	"setbotcolour [colour] - Changes my colour to [colour]"
+	"setbotcolour [colour] - Changes my colour to [colour]",
+	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!"
 	];
 
 	
@@ -63,7 +65,7 @@ function getVal(key, def)
 	
 	for (var i = 0; i < lines.length; i++)
 	{
-		if (lines[i].split(";")[0] === key)
+		if (lines[i].split(";")[0].toString() === key.toString())
 		{
 			return lines[i].substr(lines[i].indexOf(";") + 1);
 		}
@@ -76,6 +78,8 @@ function setVal(key, val)
 {
 	var lines = sys.getFileContent(settingsPath).split("\n");
 	var found = false;
+	
+	val = val.toString();
 	
 	for (var i = 0; i < lines.length; i++)
 	{
@@ -104,7 +108,7 @@ function botHTML(timestamp, colon, symbol)
 	if (symbol === undefined)
 		symbol = true;
 		
-	return "<font color='" + getVal("botColour") + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? "±" : "") + getVal("botName") + (colon ? ":" : "") + "</font></b>";
+	return "<font color='" + getVal("botColour", "red") + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? "±" : "") + getVal("botName", "Delibird") + (colon ? ":" : "") + "</font></b>";
 }
 
 String.prototype.getMessage = function()
@@ -132,6 +136,11 @@ String.prototype.parseCmdDesc = function()
 	var ret = "<a href='po:setmsg/" + this.substr(0, this.indexOf(" - ")) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
 		
 	return ret;
+};
+
+String.prototype.withEmotes = function()
+{
+	return this.replace(/:\)/g, smile).replace(/☆/g, star);
 };
 
 String.prototype.fixLinks = function()
@@ -179,8 +188,8 @@ function print(message, channel)
 }
 
 function printMessage(message, channel)
-{
-	print(botHTML(true) + " " + message, channel);
+{		
+	print(botHTML(true) + " " + (cmp(getVal("emotes", "on"), "on") ? message.withEmotes() : message), channel);
 }
 
 function printBorder(channel)
@@ -308,17 +317,17 @@ clientStartUp: function()
 },
 beforeSendMessage: function(message, channel)
 {
-	var cs = getVal("cmdSymbol");
+	var cs = getVal("cmdSymbol", "~");
 	var m = message.getMessage();
 	
 	if (m.substr(0, cs.length) === cs)
 	{
 		sys.stopEvent();
-		handleCommand(m.split(" ")[0].substr(cs.length), m.substr(m.indexOf(" ") + 1).split(";"), channel);
+		handleCommand(m.split(" ")[0].substr(cs.length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
 	}
 	else
 	{
-		if (getVal("misspell", false))
+		if (getVal("misspell", "off") === "on")
 		{
 			sys.stopEvent();
 			sayMispelled(m, channel);
@@ -342,9 +351,14 @@ beforeChannelMessage: function(message, channel, html)
 		
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
+			
+		if (getVal("emotes", "on") === "on")
+		{
+			msg = msg.withEmotes();
+		}
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
-			+ msg.replace(client.ownName(), (id === client.id(client.ownName()) ? "" : "<span style='background-color:#ffcc00;'" + client.ownName() + "</span>")), channel);
+			+ msg.replace(new RegExp(client.ownName, "gi"), (id === client.id(client.ownName()) ? "" : "<span style='background-color:#ffcc00;'" + client.ownName() + "</span><ping />")), channel);
 	}
 }
 
@@ -353,6 +367,8 @@ beforeChannelMessage: function(message, channel, html)
 function handleCommand(command, data, channel)
 {
 	var cs = getVal("cmdSymbol");
+	
+	
 	
 	if (command === "commands")
 	{
@@ -469,6 +485,47 @@ function handleCommand(command, data, channel)
 			printMessage("Your colour was interpreted as: <b><font color='" + color + "'>" + getVal("botName", "Delibird") + "</font></b>");
 			setVal("botColour", color);
 			printMessage("Colour changed!");
+		}
+		else
+		{
+			printMessage("What colour?");
+		}
+	}
+	else if (command === "eval")
+	{
+		if (data[0] !== undefined)
+		{
+			print(eval(data[0]));
+		}
+		else
+		{
+			printMessage("Something went wrong. <b><i>It was your fault.</i></b> (What are you trying to eval?)");
+		}
+	}
+	else if (command === "emotes")
+	{
+		if (data[0] === undefined || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+		{
+			if (cmp(getVal("emotes", "on"), "on"))
+			{
+				printMessage("Emotes: <a href='po:setmsg/:)' style='text-decoration:none;'>" + smile
+					+ "</a> <a href='po:setmsg/☆' style='text-decoration:none;'>" + star 
+					+ "</a> <a href='po:send/" + cs + "emotes off'>(Turn off)</a>");
+			}
+			else
+			{
+				printMessage("Emotes are currently off. <a href='po:send/" + cs + "emotes on'>(Turn on)</a>");
+			}
+		}
+		else if (cmp(data[0], "off"))
+		{
+			setVal("emotes", "off");
+			printMessage("Emotes have been disabled. :)");
+		}
+		else if (cmp(data[0], "on"))
+		{
+			setVal("emotes", "on");
+			printMessage("Emotes have been enabled. :)");
 		}
 	}
 	
