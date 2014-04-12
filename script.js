@@ -180,7 +180,7 @@ function print(message, channel)
 
 function printMessage(message, channel)
 {
-	print(botHTML(true) + message, channel);
+	print(botHTML(true) + " " + message, channel);
 }
 
 function printBorder(channel)
@@ -303,8 +303,8 @@ clientStartUp: function()
 		setVal("botColour", "red");
 	}
 	
-	client.printHtml(botHTML() + "Hey, you're running cool client scripts, guy!");
-	client.printHtml(botHTML() + "Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
+	client.printHtml(botHTML() + " Hey, you're running cool client scripts, guy!");
+	client.printHtml(botHTML() + " Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
 },
 beforeSendMessage: function(message, channel)
 {
