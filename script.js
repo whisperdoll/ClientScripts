@@ -375,9 +375,6 @@ beforeChannelMessage: function(message, channel, html)
 		// ok lets do this
 		
 		var cmd = "po:send/" + getVal("cmdSymbol", "~") + "lookup " + name;
-		
-		if (msg.indexOf("http") !== -1)
-			msg = msg.fixLinks();
 	
 		msg = escapeHTML(msg).replace(new RegExp("(" + escapeHTML(client.ownName()) + ")", "gi"), "<b><i>$1</i></b><ping />");
 			
@@ -385,6 +382,9 @@ beforeChannelMessage: function(message, channel, html)
 		{
 			msg = msg.withEmotes();
 		}
+		
+		if (msg.indexOf("http") !== -1)
+			msg = msg.fixLinks();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
 			 + msg, channel);
