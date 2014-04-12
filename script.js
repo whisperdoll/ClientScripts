@@ -539,7 +539,7 @@ function handleCommand(command, data, channel)
 		{
 			if (cmp(getVal("emotes", "on"), "on"))
 			{
-				printMessage("Emotes: <a href='po:setmsg/:)' style='text-decoration:none;'>" + smile
+				print(botHTML() + " Emotes: <a href='po:setmsg/:)' style='text-decoration:none;'>" + smile
 					+ "</a> <a href='po:setmsg/☆' style='text-decoration:none;'>" + star 
 					+ "</a> <a href='po:send/" + cs + "emotes off'>(Turn off)</a>");
 			}
