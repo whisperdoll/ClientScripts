@@ -74,6 +74,25 @@ function getVal(key, def)
 	return def;
 }
 
+function escapeHTML(str) // stole from moogle bc lazy
+{
+	var m = String(str);
+	
+	if (m.length > 0)
+	{
+		var amp = "&am" + "p;";
+		var lt = "&l" + "t;";
+		var gt = "&g" + "t;";
+		return m.replace(/&/g, amp)
+			.replace(/</g, lt)
+			.replace(/>/g, gt);
+    }
+    else
+	{
+        return "";
+    }
+}
+
 function setVal(key, val)
 {
 	var lines = sys.getFileContent(settingsPath).split("\n");
@@ -98,6 +117,14 @@ function setVal(key, val)
 	
 	sys.writeToFile(settingsPath, lines.join("\n"));
 }
+
+String.prototype.insert = function (index, string)
+{
+  if (index > 0)
+    return this.substring(0, index) + string + this.substring(index, this.length);
+  else
+    return string + this;
+};
 
 function botHTML(timestamp, colon, symbol)
 {
@@ -356,9 +383,11 @@ beforeChannelMessage: function(message, channel, html)
 		{
 			msg = msg.withEmotes();
 		}
+	
+		msg = escapeHTML(msg).replace(new RegExp("(" + escapeHTML(client.ownName()) + ")", "gi"), "<b><i>$1</i></b><ping />");
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
-			+ msg.replace(new RegExp(client.ownName, "gi"), (id === client.id(client.ownName()) ? "" : "<span style='background-color:#ffcc00;'" + client.ownName() + "</span><ping />")), channel);
+			 + msg, channel);
 	}
 }
 
