@@ -247,6 +247,11 @@ String.prototype.withEmotes = function()
 	return this.replace(/:\)/g, smile).replace(/☆/g, star);
 };
 
+String.prototype.enriched = function()
+{
+	return this.replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
+};
+
 String.prototype.fixLinks = function()
 {
 	// oh god
@@ -507,6 +512,8 @@ beforeChannelMessage: function(message, channel, html)
 				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), "<b><i>$1</i></b><ping />");
 			}
 		}
+		
+		msg = msg.enriched();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? "+<i>" + name + "</i>" : name) + ":</b></font></a> "
