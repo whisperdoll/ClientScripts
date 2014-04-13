@@ -57,10 +57,10 @@ function randomInt(arg1, arg2)
 
 function checkForUpdate(silent)
 {
-	sys.webCall(scriptUrl, checkUpdate);
+	sys.webCall(scriptUrl, function(resp) { checkUpdate(resp, silent); });
 }
 
-function checkUpdate(resp)
+function checkUpdate(resp, silent)
 {
 	if (resp === undefined || resp === "")
 	{
