@@ -7,7 +7,11 @@ var network = client.network();
 
 var initCheck = false;
 
+var sep = "⁄";
+
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/script.js";
+
+var acceptCommand = true;
 
 var star = "<img alt='' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJQSURBVHjajFJNTxNRFD3vY6aVVghQmyAChRhiJOLCHSvYukJcmbjQRFyRqCujexbudGvY+Qf8F8aEBdTPkEBpClKrA6ZfM0znveedmVbahCa+mZO8eXPPufeed1njBYCAIAgMvUvjNQw9As96zk0bPHr7rBZyPDf0iOcGV2k/1S+sv4DGY744meKLU6lw//8CYWk+RtlE+gG/Ogw+Oww2kXpIZ5no37kCnZ5URB6Eh6di4fIYpIhCxC3a+3hCXg1RNegWkoTbZN5NOpxGUs6wATnGxtLX+NwloEnueho8NwI+n3lpKrW75lSV4asiqewT9xNrPEdeLE7e4NezwIAAu0iakuAS2aV0p5TOJwSERgBTbUXC+uAEaq/8lVPm+/qLU4jImRQJU1c1CqpTP24XakEkxqxE1Kou/ylQBfeoQeTNUWM5eLtdNKVqPBNNyuyaXnhhNaT/s4Zgc/fA1L0Vaj0fm2iTiOMtB+8+75tSPZyBmOC20VQx2Wki2C6UjOvfocRbvdeYxJapeOv6mxMLuF0CoZhnoCs1mIb/isibZ7eguy7VxjhLJ8msdt+hUGggtcSoNWHZUALZiMM6AqxrgGw+x6QVZw0YzLFLAnSNkozTFGBZYELMG63OFZAsYc0yaQNVH6rwC7r0+yOMUTw7uiCzI2BJErLkDDxlE8+PPehMoabSEvKKLh6j9WFnX+2W10wQLBmlltSPyqr/fW9HOydgtpim+PEO76wCiQFTbR4GTnGDzt7Q99G/keXYML7/vlU8XINgK2TihY5tfwUYAAPpHgSOMoDeAAAAAElFTkSuQmCC' />";
 var smile = "<img alt='' src='data:image/gif;base64,R0lGODlhFgATANQAAAAAABwcHCwsLEhISIhgAOw4DP9ACKSMAP9sPMSsANSwHP/QKP/gDP/wLP/4aPDw8P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkZABAALAAAAAAWABMAAAWhYBBAZGmepRgIIupCIrsK7GvO9eo4ox00ixqs0dj1UD/GQnH8NRjMAGAKEC2uzNtTQUgwGLtvgoA9kgLQL3GtXGZPAcV6DrwuzakvYa4kv5ENAg8DREqCAwt4Zw6BA3tfQY4KfylrhAosCgtkdygACAZECl9KmgugAJ4GBgVyDAcHpasFqZ4FBQ0JB08HCQu3tS5OfF+Uwk6kDC02NyrLKCEAOw==' />";
@@ -45,7 +49,21 @@ function say(message, channel)
     } 
   
     network.sendChanMessage(channel, message); 
-} 
+}
+
+function hexToRgb(hex) // http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+{
+	hex = hex.toString();
+	
+	hex = hex.replace(/#/g, "");
+	
+    var bigint = parseInt(hex, 16);
+    var r = (bigint >> 16) & 255;
+    var g = (bigint >> 8) & 255;
+    var b = bigint & 255;
+
+    return "(" + r + ", " + g + ", " + b + ")";
+}
 	
 function randomInt(arg1, arg2)
 {
@@ -141,6 +159,11 @@ function setVal(key, val)
 	var lines = sys.getFileContent(settingsPath).split("\n");
 	var found = false;
 	
+	if (typeof(val) === "array")
+	{
+		val = val.join(sep);
+	}
+	
 	val = val.toString();
 	
 	for (var i = 0; i < lines.length; i++)
@@ -159,6 +182,14 @@ function setVal(key, val)
 	}
 	
 	sys.writeToFile(settingsPath, lines.join("\n"));
+}
+
+function randomWord()
+{	
+	var rs = [ "Amazing!", "Fantastic!", "Whaddya know?!", "I bet your mom is proud!", "But are you truly happy?", "Or...?" ];
+	var r = randomInt(rs.length);
+	
+	return rs[r];
 }
 
 String.prototype.insert = function (index, string)
@@ -362,7 +393,21 @@ function sayMispelled(m, channel)
 	say(newwords, channel);
 }
 
-
+Array.prototype.indexOf = function(item)
+{
+	if (cmp(this, item))
+		return 0;
+		
+	for (var i = 0; i < this.length; i++)
+	{
+		if (cmp(this[i], item))
+		{
+			return i;
+		}
+	}
+	
+	return -1;
+};
 
 
 
@@ -383,16 +428,22 @@ function init()
 }
 
 
+
+
 ({
 
 beforeSendMessage: function(message, channel)
 {
 	var m = message.getMessage();
 	
-	if (m.substr(0, cs().length) === cs())
+	if (m.substr(0, cs().length) === cs() && acceptCommand)
 	{
 		sys.stopEvent();
 		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
+	}
+	else if (!acceptCommand)
+	{
+		acceptCommand = true;
 	}
 	else
 	{
@@ -427,12 +478,29 @@ beforeChannelMessage: function(message, channel, html)
 		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), " <b><i>$1</i></b><ping />");
 			
 		if (getVal("emotes", "on") === "on")
-		{
 			msg = msg.withEmotes();
-		}
 		
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
+			
+		var stalkwords = getVal("stalkwords", "");
+		
+		if (stalkwords !== "")
+		{
+			if (stalkwords.indexOf(sep) === -1)
+			{
+				stalkwords = [ stalkwords ];
+			}
+			else
+			{
+				stalkwords = stalkwords.split(sep);
+			}
+			
+			for (var i = 0; i < stalkwords.length; i++)
+			{
+				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), "<b><i>$1</i></b><ping />");
+			}
+		}
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
 			 + msg, channel);
@@ -442,8 +510,11 @@ beforeChannelMessage: function(message, channel, html)
 })
 
 function handleCommand(command, data, channel)
-{	
-	if (command === "commands")
+{
+	if (!acceptCommand)
+		return;
+		
+	if (cmp(command, "commands") || cmp(command, "commandslist") || cmp(command, "commandlist"))
 	{
 		printBorder();
 		
@@ -468,13 +539,14 @@ function handleCommand(command, data, channel)
 		}
 		
 		var avatar = client.player(id).avatar;
+		var htr = hexToRgb(client.color(id));
 		
 		print("<hr>");
 		print(center(botHTML() + " Here's info for " + user + ":<br /><br /><img src='trainer:" + avatar + "'></img><h3><i><font color='" + client.color(id) + "'>" + user + "</font></i></h3><h4>"
 			+ "ID: " + client.id(user) + "<br />"
 			+ "Auth Level: " + client.auth(id) + "<br />"
 			+ "Ignoring?: " + (client.isIgnored(id) ? "Yes" : "No") + "<br />"
-			+ "Colour: <font color='" + client.color(id) + "'><b>" + client.color(id) + "</b></font><br />"
+			+ "Colour: <font color='" + client.color(id) + "'><b>" + client.color(id) + "</b></font> / " + htr + "<br />"
 			+ "Tiers: " + client.tiers(id).join(", ") + "<br />"
 			+ "Actions: <a href='po:pm/" + id + "'>PM</a>, <a href='po:info/" + id + "'>Challenge</a>" 
 				+ (isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "") + ", "
@@ -619,11 +691,102 @@ function handleCommand(command, data, channel)
 			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
 		});
 	}
+	else if (cmp(command, "addstalkword"))
+	{
+		if (data[0] !== undefined)
+		{
+			var stalkwords = getVal("stalkwords", "");
+			
+			if (stalkwords !== "")
+			{
+				if (stalkwords.indexOf(sep) === -1 || stalkwords.split(sep).indexOf(sep + data[0]) === -1)
+				{
+					stalkwords += sep + data[0];
+					setVal("stalkwords", stalkwords);
+					printMessage("\"" + data[0] + "\" was added to your stalkwords! <b>" + randomWord() + "</b>");
+				}
+				else
+				{
+					printMessage("That's already a stalkword you peporini piza! <a href='po:send/" + cs() + "stalkwords'>(View stalkwords)</a>");
+				}
+			}
+			else
+			{
+				setVal("stalkwords", data[0]);
+				printMessage("\"" + data[0] + "\" was added to your stalkwords! <b>" + randomWord() + "</b>");
+			}
+		}
+		else
+		{
+			printMessage("Go on....");
+		}
+	}
+	else if (cmp(command, "removestalkword"))
+	{
+		if (data[0] !== undefined)
+		{
+			var stalkwords = getVal("stalkwords", "");
+			
+			if (stalkwords !== "")
+			{
+				if (!cmp(stalkwords, data[0]) && stalkwords.split(sep).indexOf(data[0]) === -1)
+				{
+					printMessage("That's not one of your stalkwords!!!! <a href='po:send/" + cs() + "stalkwords'>(View stalkwords)</a>");
+					return;
+				}
+				
+				if (cmp(stalkwords, data[0]))
+				{
+					stalkwords = "";
+				}
+				else
+				{
+					var _stalkwords = stalkwords.split(sep);
+					_stalkwords.splice(_stalkwords.indexOf(data[0]), 1);
+					stalkwords = _stalkwords.join(sep);
+				}
+				
+				setVal("stalkwords", stalkwords);
+				printMessage("\"" + data[0] + "\" removed from stalkwords! <b>" + randomWord() + "</b>");
+			}
+		}
+	}
+	else if (cmp(command, "stalkwords"))
+	{
+		printMessage(header("Stalkwords:"));
+		var stalkwords = getVal("stalkwords", "");
+		
+		if (stalkwords === "")
+		{
+			printMessage("No stalkwords! <a href='po:setmsg/" + cs() + "addstalkword [stalkword]'>(Add stalkword)</a>");
+			return;
+		}
+		
+		stalkwords = stalkwords.split(sep);
+		var _stalkwords = stalkwords;
+		
+		for (var i = 0; i < stalkwords.length; i++)
+		{
+			var stalkword = stalkwords[i];
+			
+			if (stalkword === undefined || stalkword.replace(/ /g, "") === "") // just to be safe!
+			{
+				_stalkwords.splice(stalkwords.indexOf(stalkword), 1);
+				continue;
+			}
+			
+			printMessage("" + stalkword + " <a href='po:send/" + cs() + "removestalkword " + stalkword + "'>(Remove)</a>");
+		}
+		
+		setVal("stalkwords", _stalkwords.join(sep));
+	}
 	
 	
 	else
 	{
-		printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
+		//printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
+		acceptCommand = false;
+		say("/" + command);
 	}
 }
 
