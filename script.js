@@ -248,9 +248,19 @@ String.prototype.withEmotes = function()
 	return this.replace(/:\)/g, smile).replace(/☆/g, star);
 };
 
-String.prototype.enriched = function()
+String.prototype.enriched = function() // i could not figure out the italics/tags thing crystal moogle did good
 {
-	return this.replace(/^\<\/(.+)\/^\>/g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
+	var text = this;
+	
+	var expi = new RegExp("/(\\S+)/(?![^\\s<]*>)", "g");
+    text = text.replace(expi, "<i>$1</i>");
+    var expii = new RegExp("\\\\(\\S+)\\\\(?![^\\s<]*>)", "g");
+    text = text.replace(expii, "<i>$1</i>");
+    var expb = new RegExp("\\*(\\S+)\\*(?![^\\s<]*>)", "g");
+    text = text.replace(expb, "<b>$1</b>");
+    var expu = new RegExp("_(\\S+)_(?![^\\s<]*>)", "g");
+    text = text.replace(expu, "<u>$1</u>");
+    return text;
 };
 
 String.prototype.fixLinks = function()
