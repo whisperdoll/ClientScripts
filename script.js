@@ -472,6 +472,11 @@ beforeChannelMessage: function(message, channel, html)
 		var id = client.id(name);
 		var colour = client.color(id);
 		
+		if (client.auth(id) > 0)
+		{
+			name = "+<i>" + name + "</i>";
+		}
+		
 		sys.stopEvent();
 		
 		// ok lets do this
