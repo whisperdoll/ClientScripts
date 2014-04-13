@@ -1,9 +1,13 @@
 /* ***************************************************** */
-/* ********* YOU'LL NEVER AMOUNT TO ANYTHING *********** */
+/* ********* STOP LOOKING AT ME YOU CRAZY245 *********** */
 /* ***************************************************** */
 
 var settingsPath = "CSSettings.txt";
 var network = client.network();
+
+var initCheck = false;
+
+var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/script.js";
 
 var star = "<img alt='' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAJQSURBVHjajFJNTxNRFD3vY6aVVghQmyAChRhiJOLCHSvYukJcmbjQRFyRqCujexbudGvY+Qf8F8aEBdTPkEBpClKrA6ZfM0znveedmVbahCa+mZO8eXPPufeed1njBYCAIAgMvUvjNQw9As96zk0bPHr7rBZyPDf0iOcGV2k/1S+sv4DGY744meKLU6lw//8CYWk+RtlE+gG/Ogw+Oww2kXpIZ5no37kCnZ5URB6Eh6di4fIYpIhCxC3a+3hCXg1RNegWkoTbZN5NOpxGUs6wATnGxtLX+NwloEnueho8NwI+n3lpKrW75lSV4asiqewT9xNrPEdeLE7e4NezwIAAu0iakuAS2aV0p5TOJwSERgBTbUXC+uAEaq/8lVPm+/qLU4jImRQJU1c1CqpTP24XakEkxqxE1Kou/ylQBfeoQeTNUWM5eLtdNKVqPBNNyuyaXnhhNaT/s4Zgc/fA1L0Vaj0fm2iTiOMtB+8+75tSPZyBmOC20VQx2Wki2C6UjOvfocRbvdeYxJapeOv6mxMLuF0CoZhnoCs1mIb/isibZ7eguy7VxjhLJ8msdt+hUGggtcSoNWHZUALZiMM6AqxrgGw+x6QVZw0YzLFLAnSNkozTFGBZYELMG63OFZAsYc0yaQNVH6rwC7r0+yOMUTw7uiCzI2BJErLkDDxlE8+PPehMoabSEvKKLh6j9WFnX+2W10wQLBmlltSPyqr/fW9HOydgtpim+PEO76wCiQFTbR4GTnGDzt7Q99G/keXYML7/vlU8XINgK2TihY5tfwUYAAPpHgSOMoDeAAAAAElFTkSuQmCC' />";
 var smile = "<img alt='' src='data:image/gif;base64,R0lGODlhFgATANQAAAAAABwcHCwsLEhISIhgAOw4DP9ACKSMAP9sPMSsANSwHP/QKP/gDP/wLP/4aPDw8P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkZABAALAAAAAAWABMAAAWhYBBAZGmepRgIIupCIrsK7GvO9eo4ox00ixqs0dj1UD/GQnH8NRjMAGAKEC2uzNtTQUgwGLtvgoA9kgLQL3GtXGZPAcV6DrwuzakvYa4kv5ENAg8DREqCAwt4Zw6BA3tfQY4KfylrhAosCgtkdygACAZECl9KmgugAJ4GBgVyDAcHpasFqZ4FBQ0JB08HCQu3tS5OfF+Uwk6kDC02NyrLKCEAOw==' />";
@@ -23,9 +27,15 @@ var commands = [
 	"setbotcolour [colour] - Changes my colour to [colour]",
 	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
 	"emotes - Shows available emotes",
-	"emotes [on/off] - Enables/disables emotes"
-	];
+	"emotes [on/off] - Enables/disables emotes",
+	"update - Checks for updates"
+];
 
+	
+function cs()
+{
+	return getVal("cmdSymbol", "~");
+}
 	
 function say(message, channel) 
 { 
@@ -43,6 +53,29 @@ function randomInt(arg1, arg2)
 		return Math.floor(Math.random() * (arg2 - arg1)) + arg1;
 	else // randomInt(max)
 		return Math.floor(Math.random() * arg1);
+}
+
+function checkForUpdate(silent)
+{
+	sys.webCall(scriptUrl, checkUpdate);
+}
+
+function checkUpdate(resp)
+{
+	if (resp === undefined || resp === "")
+	{
+		printMessage("There was a problem checking for updates. (Are you connected to the internet?)");
+		return;
+	}
+	
+	if (resp !== sys.getFileContent(sys.scriptsFolder + "scripts.js"))
+	{
+		printMessage("There's an update available! <a href='po:send/" + cs() + "doupdate'>(Click here to update)</a>");
+	}
+	else if (silent === undefined || silent === false)
+	{
+		printMessage("No updates available at this time. (Surprisingly!)");
+	}
 }
 
 function cmp(x1, x2)
@@ -63,6 +96,13 @@ function cmp(x1, x2)
 
 function getVal(key, def)
 {
+	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(settingsPath) === -1)
+	{
+		sys.writeToFile(settingsPath, "");
+		setVal(key, def);
+		return def;
+	}
+	
 	var lines = sys.getFileContent(settingsPath).split("\n");
 	
 	for (var i = 0; i < lines.length; i++)
@@ -73,6 +113,7 @@ function getVal(key, def)
 		}
 	}
 	
+	setVal(key, def);
 	return def;
 }
 
@@ -325,16 +366,11 @@ function sayMispelled(m, channel)
 
 
 
-
-
-
-({
-
-clientStartUp: function()
+function init()
 {
-	if (sys.getFileContent(settingsPath) === undefined)
+	if (getVal("cmdSymbol", "::") === "::") // weird way to test if doesnt exist
 	{
-		sys.writeToFile(settingsPath, "");
+		sys.writeToFile(settingsPath, ""); // create file
 		
 		setVal("cmdSymbol", "~");
 		setVal("botName", "Delibird");
@@ -342,17 +378,21 @@ clientStartUp: function()
 	}
 	
 	client.printHtml(botHTML() + " Hey, you're running cool client scripts, guy!");
-	client.printHtml(botHTML() + " Your command symbol is: <b>" + getVal("cmdSymbol", "~") + "</b>");
-},
+	client.printHtml(botHTML() + " Your command symbol is: <b>" + cs() + "</b>");
+	checkForUpdate();
+}
+
+
+({
+
 beforeSendMessage: function(message, channel)
 {
-	var cs = getVal("cmdSymbol", "~");
 	var m = message.getMessage();
 	
-	if (m.substr(0, cs.length) === cs)
+	if (m.substr(0, cs().length) === cs())
 	{
 		sys.stopEvent();
-		handleCommand(m.split(" ")[0].substr(cs.length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
+		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
 	}
 	else
 	{
@@ -365,6 +405,12 @@ beforeSendMessage: function(message, channel)
 },
 beforeChannelMessage: function(message, channel, html)
 {
+	if (!initCheck)
+	{
+		initCheck = true;
+		init();
+	}
+	
 	if (message.indexOf(": ") !== -1 && isPlayerOnline(message.getUser()))
 	{
 		var name = message.getUser();
@@ -376,7 +422,7 @@ beforeChannelMessage: function(message, channel, html)
 		
 		// ok lets do this
 		
-		var cmd = "po:send/" + getVal("cmdSymbol", "~") + "lookup " + name;
+		var cmd = "po:send/" + cs() + "lookup " + name;
 	
 		msg = escapeHTML(msg).replace(new RegExp("( " + escapeHTML(client.ownName()) + ")", "gi"), " <b><i>$1</i></b><ping />");
 			
@@ -396,21 +442,16 @@ beforeChannelMessage: function(message, channel, html)
 })
 
 function handleCommand(command, data, channel)
-{
-	var cs = getVal("cmdSymbol");
-	
-	
-	
+{	
 	if (command === "commands")
 	{
 		printBorder();
 		
 		printMessage(header("Commands:"));
-		var cs = getVal("cmdSymbol");
 		
 		for (var i = 0; i < commands.length; i++)
 		{
-			printMessage((cs + commands[i]).parseCmdDesc());
+			printMessage((cs() + commands[i]).parseCmdDesc());
 		}
 		
 		printBorder();
@@ -438,7 +479,7 @@ function handleCommand(command, data, channel)
 			+ "Actions: <a href='po:pm/" + id + "'>PM</a>, <a href='po:info/" + id + "'>Challenge</a>" 
 				+ (isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "") + ", "
 				+ "<a href='po:ignore/" + id + "'>Toggle Ignore</a>, " // dont say ignore/unignore bc after you ignore 'toggle ignore' is still relevant
-				+ "<a href='po:send/" + getVal("cmdSymbol", "~") + "ranking " + user + "'>View Rank</a>"
+				+ "<a href='po:send/" + cs() + "ranking " + user + "'>View Rank</a>"
 			
 			+ "</h4>"));
 		print("<hr>");
@@ -541,11 +582,11 @@ function handleCommand(command, data, channel)
 			{
 				print(botHTML() + " Emotes: <a href='po:setmsg/:)' style='text-decoration:none;'>" + smile
 					+ "</a> <a href='po:setmsg/☆' style='text-decoration:none;'>" + star 
-					+ "</a> <a href='po:send/" + cs + "emotes off'>(Turn off)</a>");
+					+ "</a> <a href='po:send/" + cs() + "emotes off'>(Turn off)</a>");
 			}
 			else
 			{
-				printMessage("Emotes are currently off. <a href='po:send/" + cs + "emotes on'>(Turn on)</a>");
+				printMessage("Emotes are currently off. <a href='po:send/" + cs() + "emotes on'>(Turn on)</a>");
 			}
 		}
 		else if (cmp(data[0], "off"))
@@ -559,11 +600,30 @@ function handleCommand(command, data, channel)
 			printMessage("Emotes have been enabled. :)");
 		}
 	}
+	else if (command === "update")
+	{
+		checkForUpdate();
+	}
+	else if (cmp(command, "doupdate"))
+	{
+		sys.webCall(scriptUrl, function (resp)
+		{
+			if (resp === undefined || resp === "")
+				return;
+				
+			sys.writeToFile(sys.scriptsFolder + "backup.js", sys.getFileContent(sys.scriptsFolder + "scripts.js"));
+			
+			sys.changeScript(resp);
+			sys.writeToFile(sys.scriptsFolder + "scripts.js", resp);
+			
+			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
+		});
+	}
 	
 	
 	else
 	{
-		printMessage("<b>" + cs + command + "</b> is not a command! <a href='po:send/" + cs + "commands'>View commands</a>");
+		printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
 	}
 }
 
