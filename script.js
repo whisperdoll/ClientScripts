@@ -26,7 +26,7 @@ var commands = [
 	"pm [name];[message] - PMs user [name] with [message]",
 	"ranking [name] - Opens ranking window and selects [name]",
 	"changename [name] - Attempts to change your name to [name]",
-	"setcs [symbol] - Changes your command symbol to [symbol]",
+	"setcommandsymbol [symbol] - Changes your command symbol to [symbol] (setcs is also acceptable)",
 	"setbotname [name] - Changes my name to [name]",
 	"setbotcolour [colour] - Changes my colour to [colour]",
 	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
@@ -36,7 +36,8 @@ var commands = [
 	"stalkwords - Shows a list of your stalkwords",
 	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
 	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
-	"enrichedtext [on/off] - Enables or disables enriched text"
+	"enrichedtext [on/off] - Enables or disables enriched text",
+	"setauthsymbol [symbol] - Changes symbol used to denote auth (setas is also acceptable)"
 ];
 
 	
@@ -218,8 +219,8 @@ function botHTML(timestamp, colon, symbol)
 
 String.prototype.getMessage = function()
 {
-	if (this.indexOf(':') != -1)
-		return this.substr(this.indexOf(':') + 2);
+	if (this.indexOf(":") !== -1)
+		return this.substr(this.indexOf(":") + 2);
 
 	return this;
 };
@@ -528,7 +529,7 @@ beforeChannelMessage: function(message, channel, html)
 			msg = msg.withEmotes();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
-			+ (client.auth(id) > 0 ? "+<i>" + name + "</i>" : name) + ":</b></font></a> "
+			+ (client.auth(id) > 0 ? getVal("authSymbol", "+") + "<i>" + name + ":</i>" : name + ":") + "</b></font></a> "
 			+ msg, channel);
 	}
 }
@@ -617,7 +618,7 @@ function handleCommand(command, data, channel)
 		
 		client.changeName(name);
 	}
-	else if (command === "setcs")
+	else if (cmp(command, "setcommandsymbol") || cmp(command, "setcs"))
 	{
 		var symbol = data[0];
 		
@@ -829,6 +830,18 @@ function handleCommand(command, data, channel)
 		else
 		{
 			printMessage("What? On or off?");
+		}
+	}
+	else if (cmp(command, "setas") || cmp(command, "setauthsymbol"))
+	{
+		if (data[0] !== undefined && data[0].length === 1)
+		{
+			setVal("authSymbol", data[0]);
+			printMessage("Auth symbol changed to: " + data[0]);
+		}
+		else
+		{
+			printMessage("Auth symbols should be one character in length!");
 		}
 	}
 	
