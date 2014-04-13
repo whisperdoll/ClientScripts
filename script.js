@@ -302,6 +302,8 @@ String.prototype.enriched = function() // i could not figure out the italics/tag
 {
 	var text = this;
 	
+	text = text.replace(/\/\//g, sep + sep);
+	
 	var expi = new RegExp("/(\\S+)/(?![^\\s<]*>)", "g");
     text = text.replace(expi, "<i>$1</i>");
     var expii = new RegExp("\\\\(\\S+)\\\\(?![^\\s<]*>)", "g");
@@ -310,7 +312,7 @@ String.prototype.enriched = function() // i could not figure out the italics/tag
     text = text.replace(expb, "<b>$1</b>");
     var expu = new RegExp("_(\\S+)_(?![^\\s<]*>)", "g");
     text = text.replace(expu, "<u>$1</u>");
-    return text;
+    return text.replace(new RegExp(sep + sep, "g"), "//");
 };
 
 String.prototype.fixLinks = function()
@@ -580,9 +582,6 @@ beforeChannelMessage: function(message, channel, html)
 		var cmd = "po:send/" + cs() + "lookup " + name;
 	
 		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), flashStyle("$1"));
-		
-		if (msg.indexOf("http") !== -1)
-			msg = msg.fixLinks();
 			
 		var stalkwords = getVal("stalkwords", "");
 		
@@ -602,17 +601,21 @@ beforeChannelMessage: function(message, channel, html)
 				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), flashStyle("$1"));
 			}
 		}
+			
+		if (getVal("emotes", "on") === "on")
+			msg = msg.withEmotes();
 		
 		if (cmp(getVal("etext", "on"), "on"))
 			msg = msg.enriched();
 			
-		if (getVal("emotes", "on") === "on")
-			msg = msg.withEmotes();
+		if (msg.indexOf("http") !== -1)
+			msg = msg.fixLinks();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? getVal("authSymbol", "+") + "<i>" + name + ":</i>" : name + ":") + "</b></font></a> "
 			+ msg, channel);
 	}
+		
 }
 
 })
@@ -976,7 +979,6 @@ function handleCommand(command, data, channel)
 		say("/" + command);
 	}
 }
-
 
 
 
