@@ -35,7 +35,8 @@ var commands = [
 	"update - Checks for updates",
 	"stalkwords - Shows a list of your stalkwords",
 	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
-	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords"
+	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
+	"enrichedtext [on/off] - Enables or disables enriched text"
 ];
 
 	
@@ -513,7 +514,8 @@ beforeChannelMessage: function(message, channel, html)
 			}
 		}
 		
-		msg = msg.enriched();
+		if (cmp(getVal("etext", "on"), "on"))
+			msg = msg.enriched();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? "+<i>" + name + "</i>" : name) + ":</b></font></a> "
@@ -795,6 +797,29 @@ function handleCommand(command, data, channel)
 		
 		setVal("stalkwords", _stalkwords.join(sep));
 		printBorder();
+	}
+	else if (cmp(command, "enrichedtext"))
+	{
+		if (data[0] === undefined)
+		{
+			printMessage("On or off?");
+			return;
+		}
+		
+		if (cmp(data[0], "on"))
+		{
+			setVal("etext", "on");
+			printMessage("Enriched text was enabled!");
+		}
+		else if (cmp(data[0], "off"))
+		{
+			setVal("etext", "off");
+			printMessage("Enriched text was disabled!");
+		}
+		else
+		{
+			printMessage("What? On or off?");
+		}
 	}
 	
 	
