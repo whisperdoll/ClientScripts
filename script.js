@@ -424,7 +424,7 @@ beforeChannelMessage: function(message, channel, html)
 		
 		var cmd = "po:send/" + cs() + "lookup " + name;
 	
-		msg = escapeHTML(msg).replace(new RegExp("( " + escapeHTML(client.ownName()) + ")", "gi"), " <b><i>$1</i></b><ping />");
+		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), " <b><i>$1</i></b><ping />");
 			
 		if (getVal("emotes", "on") === "on")
 		{
