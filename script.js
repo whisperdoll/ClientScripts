@@ -3,6 +3,7 @@
 /* ***************************************************** */
 
 var settingsPath = "CSSettings.txt";
+var emotesPath = "emotes.txt";
 var network = client.network();
 
 var initCheck = false;
@@ -10,6 +11,11 @@ var initCheck = false;
 var sep = "⁄";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/script.js";
+var emoteUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes";
+var emotesCheck = false;
+
+var emotesData;
+var emotesList;
 
 var acceptCommand = true;
 
@@ -26,7 +32,7 @@ var commands = [
 	"pm [name];[message] - PMs user [name] with [message]",
 	"ranking [name] - Opens ranking window and selects [name]",
 	"changename [name] - Attempts to change your name to [name]",
-	"setcommandsymbol [symbol] - Changes your command symbol to [symbol] (setcs is also acceptable)",
+	"setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
 	"setbotname [name] - Changes my name to [name]",
 	"setbotcolour [colour] - Changes my colour to [colour]",
 	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
@@ -37,7 +43,8 @@ var commands = [
 	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
 	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
 	"enrichedtext [on/off] - Enables or disables enriched text",
-	"setauthsymbol [symbol] - Changes symbol used to denote auth (setas is also acceptable)"
+	"setauthsymbol [symbol] - Changes symbol used to denote auth",
+	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords"
 ];
 
 	
@@ -244,9 +251,51 @@ String.prototype.parseCmdDesc = function()
 	return ret;
 };
 
+function getEmotes()
+{
+	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
+	{
+		if (emotesCheck)
+			return;
+			
+		emotesCheck = true;
+		setVal("emotes", "off");
+		printMessage("Downloading emotes...");
+		sys.webCall(emoteUrl, function(resp)
+		{
+			if (resp === "")
+			{
+				printMessage("Couldn't download emotes. Turning emotes off.");
+				setVal("emotes", "off");
+				return;
+			}
+			
+			sys.writeToFile(emotesPath, resp);
+			emotesData = resp;
+			printMessage("Emotes downloaded!");
+			setVal("emotes", "on");
+			emotesCheck = false;
+		});
+	}
+}
+
 String.prototype.withEmotes = function()
 {
-	return this.replace(/:\)/g, smile).replace(/☆/g, star);
+	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
+	{
+		getEmotes();
+	}
+	else
+	{
+		var e = emotesData.replace(/\r/g, "").split("\n");
+		var ret = this;
+		for (var i = 0; i < e.length; i++)
+		{
+			ret = ret.replace(new RegExp("\:" + e[i].split("\\")[0] + "\:", "gi"),"<img src='" + e[i].split("\\")[1] + "'>");
+		}
+		
+		return ret;
+	}
 };
 
 String.prototype.enriched = function() // i could not figure out the italics/tags thing crystal moogle did good
@@ -266,20 +315,9 @@ String.prototype.enriched = function() // i could not figure out the italics/tag
 
 String.prototype.fixLinks = function()
 {
-	// oh god
+	var s = this.replace(/(http):\/\/(.+)\.(.+)/gi, "$1://$2.$3").replace(/(https):\/\/(.+)\.(.+)/gi, "$1://$2.$3"); // should keep case and things
 	
-	var s = this;
-	var words = s.split(" ");
-	
-	for (var i = 0; i < words.length; i++)
-	{
-		if ( (cmp(words[i].substr(0, 7), "http://") || cmp(words[i].substr(0, 8), "https://") )&& words[i].indexOf(".") !== -1)
-		{
-			words[i] = "<a href='" + words[i] + "'>" + words[i] + "</a>";
-		}
-	}
-	
-	return words.join(" ");
+	return s;
 };
 
 
@@ -310,7 +348,7 @@ function print(message, channel)
 
 function printMessage(message, channel)
 {		
-	print(botHTML(true) + " " + (cmp(getVal("emotes", "on"), "on") ? message.withEmotes() : message), channel);
+	print(botHTML() + " " + (cmp(getVal("emotes", "on"), "on") ? message.withEmotes() : message), channel);
 }
 
 function printBorder(channel)
@@ -429,6 +467,28 @@ Array.prototype.indexOf = function(item)
 	return -1;
 };
 
+String.prototype.indexOf = function(str)
+{
+	if (str.length > this.length)
+		return -1;
+	if (cmp(str, this))
+		return 0;
+
+	for (var i = 0; i < this.length; i++)
+	{
+		if (cmp(this.substr(i, str.length), str))
+			return i;
+	}
+	
+	return -1;
+};
+
+function flashStyle(text)
+{
+	return "<i><span style='background:" + getVal("flashColour", "gold") + ";'>" + text + "</span></i><span />";
+}
+
+
 
 
 function init()
@@ -440,6 +500,23 @@ function init()
 		setVal("cmdSymbol", "~");
 		setVal("botName", "Delibird");
 		setVal("botColour", "red");
+	}
+	
+	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
+	{
+		getEmotes();
+	}
+	else
+	{
+		emotesData = sys.getFileContent(emotesPath);
+	}
+	
+	emotesList = "";
+	var e = emotesData.replace(/\r/g, "").split("\n");
+	
+	for (var i = 0; i < e.length; i++)
+	{
+		emotesList += "<a href='po:setmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
 	}
 	
 	client.printHtml(botHTML() + " Hey, you're running cool client scripts, guy!");
@@ -456,7 +533,11 @@ beforeSendMessage: function(message, channel)
 {
 	var m = message.getMessage();
 	
-	if (m.substr(0, cs().length) === cs() && acceptCommand)
+	if (m === "/~?")
+	{
+		printMessage("Your command symbol is: <b>" + cs() + "</b>");
+	}
+	else if (m.substr(0, cs().length) === cs() && acceptCommand)
 	{
 		sys.stopEvent();
 		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
@@ -498,7 +579,7 @@ beforeChannelMessage: function(message, channel, html)
 		
 		var cmd = "po:send/" + cs() + "lookup " + name;
 	
-		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), " <b><i>$1</i></b><ping />");
+		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), flashStyle("$1"));
 		
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
@@ -518,7 +599,7 @@ beforeChannelMessage: function(message, channel, html)
 			
 			for (var i = 0; i < stalkwords.length; i++)
 			{
-				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), "<b><i>$1</i></b><ping />");
+				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), flashStyle("$1"));
 			}
 		}
 		
@@ -585,11 +666,27 @@ function handleCommand(command, data, channel)
 	}
 	else if (command === "ranking")
 	{
+		if (data[0] === undefined)
+		{
+			acceptCommand = false;
+			say("/ranking");
+			return;
+		}
+		
 		var id = client.id(data[0]);
 		
 		if (id === -1)
 		{
-			printMessage("Cannot show ranking for that player!");
+			if (client.getTierList().indexOf(data[0]) !== -1)
+			{
+				acceptCommand = false;
+				say("/ranking " + data[0]);
+			}
+			else
+			{
+				printMessage("Cannot show ranking for that player!");
+			}
+			
 			return;
 		}
 		
@@ -639,8 +736,8 @@ function handleCommand(command, data, channel)
 		
 		if (name !== undefined && name.replace(/ /g, "").length > 0)
 		{
-			printMessage("Call me <b><font color='" + getVal("botColour", "red") + "'>" + name + "</font></b>!");
 			setVal("botName", name);
+			printMessage("Call me " + botHTML(false, false, false) + "!");
 		}
 		else
 		{
@@ -653,8 +750,8 @@ function handleCommand(command, data, channel)
 		
 		if (color !== undefined)
 		{
-			printMessage("Your colour was interpreted as: <b><font color='" + color + "'>" + getVal("botName", "Delibird") + "</font></b>");
 			setVal("botColour", color);
+			printMessage("Your colour was interpreted as: " + botHTML(false, false, false));
 			printMessage("Colour changed!");
 		}
 		else
@@ -679,9 +776,7 @@ function handleCommand(command, data, channel)
 		{
 			if (cmp(getVal("emotes", "on"), "on"))
 			{
-				print(botHTML() + " Emotes: <a href='po:setmsg/:)' style='text-decoration:none;'>" + smile
-					+ "</a> <a href='po:setmsg/☆' style='text-decoration:none;'>" + star 
-					+ "</a> <a href='po:send/" + cs() + "emotes off'>(Turn off)</a>");
+				print("<hr><br>" + botHTML() + " Here's all of the emotes:<br><br>" + emotesList + "<br><hr>");
 			}
 			else
 			{
@@ -695,6 +790,12 @@ function handleCommand(command, data, channel)
 		}
 		else if (cmp(data[0], "on"))
 		{
+			if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
+			{
+				getEmotes();
+				return;
+			}
+			
 			setVal("emotes", "on");
 			printMessage("Emotes have been enabled. :)");
 		}
@@ -843,6 +944,28 @@ function handleCommand(command, data, channel)
 		{
 			printMessage("Auth symbols should be one character in length!");
 		}
+	}
+	else if (cmp(command, "setflashcolour") || cmp(command, "setflashcolor") || cmp(command, "setfc"))
+	{
+		if (data[0] === undefined)
+		{
+			printMessage("Set it to what?!?!? <b>COME ON!</b>");
+			return;
+		}
+		
+		setVal("flashColour", data[0]);
+		printMessage("Flash colour changed, " + flashStyle(client.ownName()) + "!");
+	}
+	else if (cmp(command, "pokenos"))
+	{
+		var lines = "";
+		
+		for (var i = 0; i < 800; i++)
+		{
+			lines += i + ";" + sys.pokemon(i) + "\r\n";
+		}
+		
+		sys.writeToFile("ok.txt", lines);
 	}
 	
 	
