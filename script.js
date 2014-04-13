@@ -32,7 +32,10 @@ var commands = [
 	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
 	"emotes - Shows available emotes",
 	"emotes [on/off] - Enables/disables emotes",
-	"update - Checks for updates"
+	"update - Checks for updates",
+	"-stalkwords - Shows a list of your stalkwords",
+	"-addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
+	"-removestalkword [stalkword] - Removes [stalkword] from your stalkwords"
 ];
 
 	
