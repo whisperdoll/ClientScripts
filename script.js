@@ -33,9 +33,9 @@ var commands = [
 	"emotes - Shows available emotes",
 	"emotes [on/off] - Enables/disables emotes",
 	"update - Checks for updates",
-	"-stalkwords - Shows a list of your stalkwords",
-	"-addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
-	"-removestalkword [stalkword] - Removes [stalkword] from your stalkwords"
+	"stalkwords - Shows a list of your stalkwords",
+	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
+	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords"
 ];
 
 	
