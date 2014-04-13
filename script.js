@@ -250,7 +250,7 @@ String.prototype.withEmotes = function()
 
 String.prototype.enriched = function()
 {
-	return this.replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
+	return this.replace(/^\<\/(.+)\/^\>/g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
 };
 
 String.prototype.fixLinks = function()
