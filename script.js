@@ -498,9 +498,6 @@ beforeChannelMessage: function(message, channel, html)
 		var cmd = "po:send/" + cs() + "lookup " + name;
 	
 		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), " <b><i>$1</i></b><ping />");
-			
-		if (getVal("emotes", "on") === "on")
-			msg = msg.withEmotes();
 		
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
@@ -526,6 +523,9 @@ beforeChannelMessage: function(message, channel, html)
 		
 		if (cmp(getVal("etext", "on"), "on"))
 			msg = msg.enriched();
+			
+		if (getVal("emotes", "on") === "on")
+			msg = msg.withEmotes();
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? "+<i>" + name + "</i>" : name) + ":</b></font></a> "
