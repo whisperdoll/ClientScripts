@@ -444,9 +444,12 @@ beforeSendMessage: function(message, channel)
 		sys.stopEvent();
 		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
 	}
-	else if (!acceptCommand)
+	else if (m.substr(0, cs().length) === cs() && !acceptCommand)
 	{
+		sys.stopEvent();
 		acceptCommand = true;
+		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [ undefined ]), channel);
+	
 	}
 	else
 	{
@@ -471,11 +474,6 @@ beforeChannelMessage: function(message, channel, html)
 		var msg = message.getMessage();
 		var id = client.id(name);
 		var colour = client.color(id);
-		
-		if (client.auth(id) > 0)
-		{
-			name = "+<i>" + name + "</i>";
-		}
 		
 		sys.stopEvent();
 		
@@ -510,8 +508,9 @@ beforeChannelMessage: function(message, channel, html)
 			}
 		}
 		
-		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " + name + ":</b></font></a> "
-			 + msg, channel);
+		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
+			+ (client.auth(id) > 0 ? "+<i>" + name + "</i>" : name) + ":</b></font></a> "
+			+ msg, channel);
 	}
 }
 
