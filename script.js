@@ -631,7 +631,7 @@ beforeChannelMessage: function (message, channel, html)
 
 		msg = msg.replace(/\<i\>\/(.+)\/\<\/i\>/g, "//$1//");
 
-		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /> " + (client.auth(id) > 0 ? getVal("authSymbol", "+").withEmotes() + "<b><i>" + name + ":</i>" : "<b>" + name + ":") + "</b></font></a> " + msg, channel);
+		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /> " + (client.auth(id) > 0 ? (getVal("emotes", "on") === "on" ? getVal("authSymbol", "+").withEmotes() : getVal("authSymbol", "+")) + "<b><i>" + name + ":</i>" : "<b>" + name + ":") + "</b></font></a> " + msg, channel);
 	}
 
 }
