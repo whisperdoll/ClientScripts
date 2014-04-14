@@ -338,7 +338,7 @@ function print(message, channel)
 
 function printMessage(message, channel)
 {
-	print(botHTML() + " " + (cmp(getVal("emotes", "on"), "on") ? message.withEmotes() : message), channel);
+	print((cmp(getVal("emotes", "on"), "on") ? botHTML().withEmotes() : botHTML()) + " " + (cmp(getVal("emotes", "on"), "on") ? message.withEmotes() : message), channel);
 }
 
 function printBorder(channel)
