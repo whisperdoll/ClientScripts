@@ -5,6 +5,7 @@
 /* ***************************************************** */
 var settingsPath = "CSSettings.txt";
 var emotesPath = "emotes.txt";
+var america = "usa";
 var network = client.network();
 
 var initCheck = false;
