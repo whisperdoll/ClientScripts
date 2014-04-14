@@ -1,11 +1,10 @@
 // Experimental links and experimental "what's new?" <b>Great!</b> //
 
 /* ***************************************************** */
-/* ********* I LIVE IN AMERICA!!!!!!!!!!!!!! *********** */
+/* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
 /* ***************************************************** */
 var settingsPath = "CSSettings.txt";
 var emotesPath = "emotes.txt";
-var america = "usa";
 var network = client.network();
 
 var initCheck = false;
