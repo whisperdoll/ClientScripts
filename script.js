@@ -921,14 +921,14 @@ else if (cmp(command, "enrichedtext"))
 }
 else if (cmp(command, "setas") || cmp(command, "setauthsymbol"))
 {
-	if (data[0] !== undefined && data[0].length === 1)
+	if (data[0] !== undefined)
 	{
 		setVal("authSymbol", data[0]);
 		printMessage("Auth symbol changed to: " + data[0]);
 	}
 	else
 	{
-		printMessage("Auth symbols should be one character in length!");
+		printMessage("<b>???</b>");
 	}
 }
 else if (cmp(command, "setflashcolour") || cmp(command, "setflashcolor") || cmp(command, "setfc"))
