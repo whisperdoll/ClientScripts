@@ -274,6 +274,16 @@ function getEmotes(force)
 
 			sys.writeToFile(emotesPath, resp);
 			emotesData = resp;
+			
+			emotesList = "";
+			
+			var e = emotesData.replace(/\r/g, "").split("\n");
+
+			for (var i = 0; i < e.length; i++)
+			{
+				emotesList += "<a href='po:appendmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
+			}
+			
 			printMessage("Emotes downloaded!");
 			setVal("emotes", "on");
 			emotesCheck = false;
@@ -509,7 +519,7 @@ function init()
 
 	for (var i = 0; i < e.length; i++)
 	{
-		emotesList += "<a href='po:setmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
+		emotesList += "<a href='po:appendmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
 	}
 
 	client.printHtml(botHTML() + " Hey, you're running cool client scripts, guy!");
