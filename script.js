@@ -796,17 +796,19 @@ function handleCommand(command, data, channel)
 	}
 	else if (cmp(command, "doupdate"))
 	{
+		printMessage("Updating...");
 		sys.webCall(scriptUrl, function (resp)
 		{
 			if (resp === undefined || resp === "")
 				return;
 
+			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
+			
 			sys.writeToFile(sys.scriptsFolder + "backup.js", sys.getFileContent(sys.scriptsFolder + "scripts.js"));
 
 			sys.changeScript(resp);
 			sys.writeToFile(sys.scriptsFolder + "scripts.js", resp);
 
-			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
 		});
 	}
 	else if (cmp(command, "addstalkword"))
