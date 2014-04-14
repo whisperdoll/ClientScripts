@@ -306,6 +306,8 @@ String.prototype.enriched = function()
 
 String.prototype.fixLinks = function()
 {	
+	var text = this;
+
     return text;
 };
 
@@ -602,8 +604,6 @@ beforeChannelMessage: function(message, channel, html)
 			msg = msg.fixLinks();
 			
 		msg = msg.replace(/\<i\>\/(.+)\/\<\/i\>/g, "//$1//");
-			
-		printMessage(escapeHTML(msg));
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? getVal("authSymbol", "+") + "<i>" + name + ":</i>" : name + ":") + "</b></font></a> "
