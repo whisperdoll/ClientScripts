@@ -1,3 +1,5 @@
+// Experimental links and experimental "what's new?" <b>Great!</b> //
+
 /* ***************************************************** */
 /* ********* STOP LOOKING AT ME YOU CRAZY245 *********** */
 /* ***************************************************** */
@@ -827,6 +829,7 @@ function handleCommand(command, data, channel)
 			}
 
 			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
+			print("<hr><br>" + center("<h1><u>What's new?</u></h1><br>" + resp.substr(3, resp.substr(3).indexOf("//"))) + "<br><hr>");
 			
 			sys.writeToFile(sys.scriptsFolder + "backup.js", sys.getFileContent(sys.scriptsFolder + "scripts.js"));
 
