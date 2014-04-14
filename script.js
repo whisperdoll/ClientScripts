@@ -526,14 +526,14 @@ function init()
 	else
 	{
 		emotesData = sys.getFileContent(emotesPath);
-	}
 
-	emotesList = "";
-	var e = emotesData.replace(/\r/g, "").split("\n");
-
-	for (var i = 0; i < e.length; i++)
-	{
-		emotesList += "<a href='po:appendmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
+		emotesList = "";
+		var e = emotesData.replace(/\r/g, "").split("\n");
+	
+		for (var i = 0; i < e.length; i++)
+		{
+			emotesList += "<a href='po:appendmsg/:" + e[i].split("\\")[0] + ":'><img src='" + e[i].split("\\")[1] + "'></a> ";
+		}
 	}
 
 	client.printHtml(botHTML() + " Hey, you're running cool client scripts, guy!");
