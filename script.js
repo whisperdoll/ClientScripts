@@ -319,6 +319,20 @@ String.prototype.enriched = function ()
 String.prototype.fixLinks = function ()
 {
 	var text = this;
+	
+	var exp = /([a-zA-Z]+:\/\/|www\.)[^\s']+/ig;
+    var found = text.match(exp);
+    var newtext;
+    var newfound;
+    for (var x in found) {
+        if (found.hasOwnProperty(x)) {
+            var link = found[x];
+            newfound = link;
+                link = newfound;
+            newtext = ("<a href ='" + newfound + "'>" + link + "</a>").replace(/&amp;/gi, "&");
+            text = text.replace(found[x], newtext);
+        }
+    }
 
 	return text;
 };
