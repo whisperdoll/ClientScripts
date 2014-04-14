@@ -800,7 +800,10 @@ function handleCommand(command, data, channel)
 		sys.webCall(scriptUrl, function (resp)
 		{
 			if (resp === undefined || resp === "")
+			{
+				printMessage("Couldn't update! Are you connected to the internet?");
 				return;
+			}
 
 			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
 			
