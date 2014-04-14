@@ -298,28 +298,15 @@ String.prototype.withEmotes = function()
 	}
 };
 
-String.prototype.enriched = function() // i could not figure out the italics/tags thing crystal moogle did good
+String.prototype.enriched = function()
 {
-	var text = this;
-	
-	text = text.replace(/\/\//g, sep + sep);
-	
-	var expi = new RegExp("/(\\S+)/(?![^\\s<]*>)", "g");
-    text = text.replace(expi, "<i>$1</i>");
-    var expii = new RegExp("\\\\(\\S+)\\\\(?![^\\s<]*>)", "g");
-    text = text.replace(expii, "<i>$1</i>");
-    var expb = new RegExp("\\*(\\S+)\\*(?![^\\s<]*>)", "g");
-    text = text.replace(expb, "<b>$1</b>");
-    var expu = new RegExp("_(\\S+)_(?![^\\s<]*>)", "g");
-    text = text.replace(expu, "<u>$1</u>");
-    return text.replace(new RegExp(sep + sep, "g"), "//");
+	var ret = this.replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
+	return ret;
 };
 
 String.prototype.fixLinks = function()
-{
-	var s = this.replace(/(http):\/\/(.+)\.(.+)/gi, "$1://$2.$3").replace(/(https):\/\/(.+)\.(.+)/gi, "$1://$2.$3"); // should keep case and things
-	
-	return s;
+{	
+    return text;
 };
 
 
@@ -487,7 +474,7 @@ String.prototype.indexOf = function(str)
 
 function flashStyle(text)
 {
-	return "<i><span style='background:" + getVal("flashColour", "gold") + ";'>" + text + "</span></i><span />";
+	return "<i><span style='background:" + getVal("flashColour", "gold") + ";'>" + text + "</span></i><ping />";
 }
 
 
@@ -579,9 +566,13 @@ beforeChannelMessage: function(message, channel, html)
 		
 		// ok lets do this
 		
+		if (cmp(getVal("etext", "on"), "on"))
+			msg = escapeHTML(msg).enriched();
+		
 		var cmd = "po:send/" + cs() + "lookup " + name;
 	
-		msg = escapeHTML(msg).replace(new RegExp("(\\b" + escapeHTML(client.ownName()) + "\\b)", "gi"), flashStyle("$1"));
+		msg = msg.replace(/\//g, sep);
+		msg = msg.replace(new RegExp("(^" + escapeHTML(client.ownName()) + "$)", "gi"), flashStyle("$1"));
 			
 		var stalkwords = getVal("stalkwords", "");
 		
@@ -604,12 +595,15 @@ beforeChannelMessage: function(message, channel, html)
 			
 		if (getVal("emotes", "on") === "on")
 			msg = msg.withEmotes();
-		
-		if (cmp(getVal("etext", "on"), "on"))
-			msg = msg.enriched();
+			
+		msg = msg.replace(new RegExp(sep, "g"), "/");
 			
 		if (msg.indexOf("http") !== -1)
 			msg = msg.fixLinks();
+			
+		msg = msg.replace(/\<i\>\/(.+)\/\<\/i\>/g, "//$1//");
+			
+		printMessage(escapeHTML(msg));
 		
 		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /><b> " 
 			+ (client.auth(id) > 0 ? getVal("authSymbol", "+") + "<i>" + name + ":</i>" : name + ":") + "</b></font></a> "
