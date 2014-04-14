@@ -1,8 +1,8 @@
 // Experimental links and experimental "what's new?" <b>Great!</b> //
 
 /* ***************************************************** */
-/* ********* STOP LOOKING AT ME YOU CRAZY245 *********** */
-/* *****************************************f************ */
+/* ********* I LIVE IN AMERICA!!!!!!!!!!!!!! *********** */
+/* ***************************************************** */
 var settingsPath = "CSSettings.txt";
 var emotesPath = "emotes.txt";
 var network = client.network();
