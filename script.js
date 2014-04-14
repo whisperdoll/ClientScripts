@@ -320,21 +320,26 @@ String.prototype.fixLinks = function ()
 {
 	var text = this;
 	
-	var exp = /([a-zA-Z]+:\/\/|www\.)[^\s']+/ig;
-    var found = text.match(exp);
-    var newtext;
-    var newfound;
-    for (var x in found) {
-        if (found.hasOwnProperty(x)) {
-            var link = found[x];
-            newfound = link;
-                link = newfound;
-            newtext = ("<a href ='" + newfound + "'>" + link + "</a>").replace(/&amp;/gi, "&");
-            text = text.replace(found[x], newtext);
-        }
-    }
+	var words = text.split("  ");
+	
+	for (var w = 0; w < words.length; w++)
+	{
+		var word = words[w];
+		if (word.length < 7)
+		{
+			continue;
+		}
+		
+		var ind = word.indexOf(".");
+		
+		if (((cmp(word.substr(0, 7), "http://") && ind > 7) || (cmp(word.substr(0, 8), "https://")) && ind > 8)
+			&& ind !== -1 && word.length > ind + 1)
+		{
+			words[w] = "<a href='" + word + "'>" + word + "</a>";
+		}
+	}
 
-	return text;
+	return words.join(" ");
 };
 
 
@@ -593,6 +598,8 @@ beforeChannelMessage: function (message, channel, html)
 		sys.stopEvent();
 
 		// ok lets do this
+		
+		msg = msg.replace(/ /g, "  ");
 
 		if (cmp(getVal("etext", "on"), "on"))
 			msg = escapeHTML(msg).enriched();
