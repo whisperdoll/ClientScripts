@@ -250,9 +250,12 @@ String.prototype.parseCmdDesc = function ()
 	return ret;
 };
 
-function getEmotes()
+function getEmotes(force)
 {
-	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
+	if (force === undefined)
+		force = false;
+		
+	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1 || force)
 	{
 		if (emotesCheck)
 			return;
@@ -933,17 +936,13 @@ function handleCommand(command, data, channel)
 		setVal("flashColour", data[0]);
 		printMessage("Flash colour changed, " + flashStyle(client.ownName()) + "!");
 	}
-	else if (cmp(command, "pokenos"))
+	else if (cmp(command, "updateemotes"))
 	{
-		var lines = "";
-
-		for (var i = 0; i < 800; i++)
-		{
-			lines += i + ";" + sys.pokemon(i) + "\r\n";
-		}
-
-		sys.writeToFile("ok.txt", lines);
+		getEmotes(true);
 	}
+	
+	
+	
 	else
 	{
 		//printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
