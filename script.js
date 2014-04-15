@@ -323,7 +323,7 @@ String.prototype.withEmotes = function ()
 
 String.prototype.enriched = function ()
 {
-	var ret = this.replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>");
+	var ret = this.replace(/\/\//g, "   ").replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>").replace(/   /g, "//");
 	return ret;
 };
 
@@ -618,7 +618,8 @@ beforeChannelMessage: function (message, channel, html)
 		var cmd = "po:send/" + cs() + "lookup " + name;
 
 		msg = msg.replace(/\//g, sep);
-		msg = msg.replace(new RegExp("(^" + escapeHTML(client.ownName()) + "$)", "gi"), flashStyle("$1"));
+		
+		msg = msg.replace(new RegExp("(^|\\s)(" + escapeHTML(client.ownName()) + ")($|\\s)", "gi"), flashStyle("$1$2$3"));
 
 		var stalkwords = getVal("stalkwords", "");
 
@@ -635,7 +636,7 @@ beforeChannelMessage: function (message, channel, html)
 
 			for (var i = 0; i < stalkwords.length; i++)
 			{
-				msg = msg.replace(new RegExp("(\\b" + escapeHTML(stalkwords[i]) + "\\b)", "gi"), flashStyle("$1"));
+				msg = msg.replace(new RegExp("(^|\\s)(" + escapeHTML(stalkwords[i]) + ")($|\\s)", "gi"), flashStyle("$1$2$3"));
 			}
 		}
 
