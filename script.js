@@ -125,12 +125,18 @@ function cmp(x1, x2)
 	return x1 === x2;
 }
 
-function getVal(key, def)
+function getVal(key, def, setanyway)
 {
+	if (setanyway === undefined)
+		setanyway = true;
+		
 	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(settingsPath) === -1)
 	{
 		sys.writeToFile(settingsPath, "");
-		setVal(key, def);
+		
+		if (setanyway)
+			setVal(key, def);
+			
 		return def;
 	}
 
@@ -138,13 +144,15 @@ function getVal(key, def)
 
 	for (var i = 0; i < lines.length; i++)
 	{
-		if (lines[i].split(";")[0].toString() === key.toString())
+		if (cmp(lines[i].split(";")[0].toString(), key.toString()))
 		{
 			return lines[i].substr(lines[i].indexOf(";") + 1);
 		}
 	}
 
-	setVal(key, def);
+	if (setanyway)
+		setVal(key, def);
+		
 	return def;
 }
 
@@ -222,7 +230,8 @@ function botHTML(timestamp, colon, symbol)
 	if (symbol === undefined)
 		symbol = true;
 
-	return "<font color='" + getVal("botColour", "red") + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? "±" : "") + getVal("botName", "Delibird") + (colon ? ":" : "") + "</font></b>";
+	return "<font color='" + getVal("botColour", "red") + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? "±" : "")
+		+ (getVal("emotes", "on") === "on" ? getVal("botName", "Delibird").withEmotes() : getVal("botName", "Delibird")) + (colon ? ":" : "") + "</font></b>";
 }
 
 String.prototype.getMessage = function ()
@@ -954,10 +963,18 @@ function handleCommand(command, data, channel)
 	}
 	else if (cmp(command, "setas") || cmp(command, "setauthsymbol"))
 	{
-		if (data[0] !== undefined)
+		if (data[0] !== undefined && data[0].replace(/ /g, "").length > 0)
 		{
-			setVal("authSymbol", data[0]);
-			printMessage("Auth symbol changed to: " + data[0]);
+			if (data.length === 1)
+			{
+				setVal("authSymbol", data[0]);
+				printMessage("Auth symbol changed to: " + data[0]);
+			}
+			else if (data[1].replace(/ /g, "").length > 0)
+			{
+				setVal("authSymbol" + data[1], data[0]);
+				printMessage("If " + data[1] + " is auth, their symbol is now: " + data[0]);
+			}
 		}
 		else
 		{
