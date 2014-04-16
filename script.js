@@ -1,4 +1,4 @@
-// New <b><font color='blue'>-setauthsymbol</font></b> <code>[symbol]</code>;<code>[level]</code> - Can change symbols for different levels of auth! (Thanks Bamarah!)<br><b>Also:</b> I fixed the stupid enriched text bug with links (hopefully), but right now, combining isn't supported. I'll work on that later.<br>Both of these features need testing, if you find bugs be sure to tell me either on the forum or the client! Thanks! //
+// New <b><font color='blue'>setauthsymbol</font></b> <code>[symbol]</code>;<code>[level]</code> - Can change symbols for different levels of auth! (Thanks Bamarah!)<br><b>Also:</b> I fixed the stupid enriched text bug with links (hopefully), but right now, combining isn't supported. I'll work on that later.<br>Both of these features need testing, if you find bugs be sure to tell me either on the forum or the client! Thanks! //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
