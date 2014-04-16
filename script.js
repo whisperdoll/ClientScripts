@@ -1,4 +1,4 @@
-// Experimental links and experimental "what's new?" <b>Great!</b> //
+// New <b><font color='blue'>-setauthsymbol</font></b> <code>[symbol]</code>;<code>[level]</code> - Can change symbols for different levels of auth! (Thanks Bamarah!)<br><b>Also:</b> I fixed the stupid enriched text bug with links (hopefully), but right now, combining isn't supported. I'll work on that later.<br>Both of these features need testing, if you find bugs be sure to tell me either on the forum or the client! Thanks! //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
@@ -7,6 +7,24 @@ var settingsPath = "CSSettings.txt";
 var emotesPath = "emotes.txt";
 var network = client.network();
 
+var defaults = [
+
+	"cmdSymbol;~",
+	"botColour;red",
+	"botName;Delibird",
+	"emotes;on",
+	"flashColour;gold",
+	"etext;on",
+	"stalkwords;",
+	"ignorechals;off",
+	"auth0;",
+	"auth1;+",
+	"auth2;+",
+	"auth3;+",
+	"auth4;"
+
+];
+
 var initCheck = false;
 
 var sep = "⁄";
@@ -14,6 +32,8 @@ var sep = "⁄";
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/script.js";
 var emoteUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes";
 var emotesCheck = false;
+
+var authSymbols = [];
 
 var emotesData;
 var emotesList;
@@ -42,13 +62,15 @@ var commands = [
 	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
 	"enrichedtext [on/off] - Enables or disables enriched text",
 	"setauthsymbol [symbol] - Changes symbol used to denote auth",
-	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords"
+	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
+	"updateemotes - Downloads the emotes file",
+	"ignorechallenges [on/off] - Enables or disables auto-ignored challenges"
 ];
 
 
 function cs()
 {
-	return getVal("cmdSymbol", "~");
+	return getVal("cmdSymbol");
 }
 
 function say(message, channel)
@@ -125,10 +147,27 @@ function cmp(x1, x2)
 	return x1 === x2;
 }
 
-function getVal(key, def, setanyway)
+function getVal(key, setanyway, def)
 {
 	if (setanyway === undefined)
 		setanyway = true;
+		
+	if (def === undefined)
+	{
+		for (var i = 0; i < defaults.length; i++)
+		{
+			var s = defaults[i].split(";");
+			
+			if (cmp(key, s[0]))
+			{
+				def = s[1];
+				break;
+			}
+		}
+	}
+	
+	if (def === undefined) // still
+		def = "";
 		
 	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(settingsPath) === -1)
 	{
@@ -323,7 +362,7 @@ String.prototype.withEmotes = function ()
 
 String.prototype.enriched = function ()
 {
-	var ret = this.replace(/\/\//g, "   ").replace(/\/(.+)\//g, "<i>$1</i>").replace(/_(.+)_/g, "<u>$1</u>").replace(/\*(.+)\*/g, "<b>$1</b>").replace(/   /g, "//");
+	var ret = this.replace(/(^|\s)\/(.+)\/($|\s)/g, "$1<i>$2</i>$3").replace(/(^|\s)_(.+)_($|\s)/g, "$1<u>$2</u>$3").replace(/(^|\s)\*(.+)\*($|\s)/g, "$1<b>$2</b>$3");
 	return ret;
 };
 
@@ -533,6 +572,12 @@ function init()
 		setVal("cmdSymbol", "~");
 		setVal("botName", "Delibird");
 		setVal("botColour", "red");
+		
+		setVal("auth0", "");
+		setVal("auth1", "+");
+		setVal("auth2", "+");
+		setVal("auth3", "+");
+		setVal("auth4", "");
 	}
 
 	if (sys.filesForDirectory(sys.getCurrentDir()).indexOf(emotesPath) === -1)
@@ -650,9 +695,16 @@ beforeChannelMessage: function (message, channel, html)
 
 		msg = msg.replace(/\<i\>\/(.+)\/\<\/i\>/g, "//$1//");
 
-		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /> " + (client.auth(id) > 0 ? (getVal("emotes", "on") === "on" ? getVal("authSymbol", "+").withEmotes() : getVal("authSymbol", "+")) + "<b><i>" + name + ":</i>" : "<b>" + name + ":") + "</b></font></a> " + msg, channel);
+		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /> " + (client.auth(id) > 0 ? (getVal("emotes", "on") === "on" ? getVal("auth" + client.auth(id)).withEmotes() : getVal("auth" + client.auth(id))) + "<b><i>" + name + ":</i>" : getVal("auth0") + "<b>" + name + ":") + "</b></font></a> " + msg, channel);
 	}
 
+},
+beforeChallengeReceived: function(challengeId, opponentId, tier, clauses)
+{
+	if (getVal("ignoreChals", "off") === "on")
+	{
+		sys.stopEvent();
+	}
 }
 
 })
@@ -968,18 +1020,44 @@ function handleCommand(command, data, channel)
 		{
 			if (data.length === 1)
 			{
-				setVal("authSymbol", data[0]);
-				printMessage("Auth symbol changed to: " + data[0]);
+				setVal("auth1", data[0]);
+				setVal("auth2", data[0]);
+				setVal("auth3", data[0]);
+				printMessage("Auth 1-3 symbol changed to: " + data[0]);
 			}
-			else if (data[1].replace(/ /g, "").length > 0)
+			else if (data[1].length > 0)
 			{
-				setVal("authSymbol" + data[1], data[0]);
-				printMessage("If " + data[1] + " is auth, their symbol is now: " + data[0]);
+				var p = parseInt(data[1]);
+				
+				if (p < 0 || p > 4 || p.toString() === "NaN")
+				{
+					printMessage("Auth levels are 0-4.");
+					return;
+				}
+				
+				setVal("auth" + p, data[0].toString());
+				printMessage(data[1].toString() + "-level auth is now denoted by: " + data[0]);
 			}
 		}
 		else
 		{
 			printMessage("<b>???</b>");
+		}
+	}
+	else if (cmp(command, "clearas") || cmp(command, "clearauthsymbol"))
+	{
+		if (data[0] !== undefined)
+		{
+			var p = parseInt(data[0]);
+				
+				if (p < 0 || p > 4 || p.toString() === "NaN")
+				{
+					printMessage("Auth levels are 0-4.");
+					return;
+				}
+				
+			setVal("auth" + p, "");
+			printMessage("Auth symbol for level-" + p + " auth was cleared!");
 		}
 	}
 	else if (cmp(command, "setflashcolour") || cmp(command, "setflashcolor") || cmp(command, "setfc"))
@@ -996,6 +1074,17 @@ function handleCommand(command, data, channel)
 	else if (cmp(command, "updateemotes"))
 	{
 		getEmotes(true);
+	}
+	else if (cmp(command, "ignorechals") || cmp(command, "ignorechallenges"))
+	{
+		if (data[0] === undefined || (!cmp(data[0], "off") && !cmp(data[0], "on")))
+		{
+			printMessage("What? <a href='po:send/" + cs() + "ignorechallenges on'>On</a> or <a href='po:/send/" + cs() + "ignorechallenges off'>off</a>?");
+			return;
+		}
+		
+		setVal("ignoreChals", data[0].toLowerCase());
+		printMessage("Auto-ignore challenges was turned " + data[0].toLowerCase() + "!");
 	}
 	
 	
