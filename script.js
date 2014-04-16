@@ -1,4 +1,4 @@
-// New <b><font color='blue'>setauthsymbol</font></b> <code>[symbol]</code>;<code>[level]</code> - Can change symbols for different levels of auth! (Thanks Bamarah!)<br><b>Also:</b> I fixed the stupid enriched text bug with links (hopefully), but right now, combining isn't supported. I'll work on that later.<br>Both of these features need testing, if you find bugs be sure to tell me either on the forum or the client! Thanks! //
+// You can now combine enriched text things (/*ok*/ would be <i><b>ok</b></i>)! Also, you can change the string used to separate the parameters for commands from a semicolon.<br><br>If you find any bugs, please report them!<br><b>I totally won't kill you, haha!!!!!!!!!!</b> //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
@@ -21,7 +21,8 @@ var defaults = [
 	"auth1;+",
 	"auth2;+",
 	"auth3;+",
-	"auth4;"
+	"auth4;",
+	"sep;((sc))"
 
 ];
 
@@ -47,7 +48,7 @@ var commands = [
 	"commands - Shows commands",
 	"lookup [name] - Displays information about [name]",
 	"pm [name] - Opens PM window with [name] selected",
-	"pm [name];[message] - PMs user [name] with [message]",
+	"pm [name]((sep))[message] - PMs user [name] with [message]",
 	"ranking [name] - Opens ranking window and selects [name]",
 	"changename [name] - Attempts to change your name to [name]",
 	"setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
@@ -62,9 +63,11 @@ var commands = [
 	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
 	"enrichedtext [on/off] - Enables or disables enriched text",
 	"setauthsymbol [symbol] - Changes symbol used to denote auth",
+	"setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
 	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	"updateemotes - Downloads the emotes file",
-	"ignorechallenges [on/off] - Enables or disables auto-ignored challenges"
+	"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
+	"setseparater [separater] - Sets the command parameter separater to [separater]"
 ];
 
 
@@ -160,7 +163,7 @@ function getVal(key, setanyway, def)
 			
 			if (cmp(key, s[0]))
 			{
-				def = s[1];
+				def = s[1].replace(/\(\(sc\)\)/g, ";");
 				break;
 			}
 		}
@@ -292,7 +295,7 @@ String.prototype.parseCmdDesc = function ()
 	var params = this.substr(this.split(" ")[0].length).split(" - ")[0];
 	var desc = this.substr(this.indexOf(" - "));
 
-	params = params.replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
+	params = params.replace(/\(\(sep\)\)/g, getVal("sep")).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 
 	var ret = "<a href='po:setmsg/" + this.substr(0, this.indexOf(" - ")) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
@@ -362,7 +365,18 @@ String.prototype.withEmotes = function ()
 
 String.prototype.enriched = function ()
 {
-	var ret = this.replace(/(^|\s)\/(.+)\/($|\s)/g, "$1<i>$2</i>$3").replace(/(^|\s)_(.+)_($|\s)/g, "$1<u>$2</u>$3").replace(/(^|\s)\*(.+)\*($|\s)/g, "$1<b>$2</b>$3");
+	var ret = this.replace(/(^|\s|\<u\>|\<b\>)\/(.+)\/($|\s|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+		.replace(/(^|\s|\<i\>|\<b\>)_(.+)_($|\s|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+		.replace(/(^|\s|\<i\>|\<u\>)\*(.+)\*($|\s|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		
+	ret = ret.replace(/(^|\s|\<u\>|\<b\>)\/(.+)\/($|\s|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+		.replace(/(^|\s|\<i\>|\<b\>)_(.+)_($|\s|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+		.replace(/(^|\s|\<i\>|\<u\>)\*(.+)\*($|\s|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		
+	ret = ret.replace(/(^|\s|\<u\>|\<b\>)\/(.+)\/($|\s|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+		.replace(/(^|\s|\<i\>|\<b\>)_(.+)_($|\s|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+		.replace(/(^|\s|\<i\>|\<u\>)\*(.+)\*($|\s|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		
 	return ret;
 };
 
@@ -618,13 +632,13 @@ beforeSendMessage: function (message, channel)
 	else if (m.substr(0, cs().length) === cs() && acceptCommand)
 	{
 		sys.stopEvent();
-		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [undefined]), channel);
+		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(getVal("sep")) : [undefined]), channel);
 	}
 	else if (m.substr(0, cs().length) === cs() && !acceptCommand)
 	{
 		sys.stopEvent();
 		acceptCommand = true;
-		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(";") : [undefined]), channel);
+		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(getVal("sep")) : [undefined]), channel);
 
 	}
 	else
@@ -1085,6 +1099,17 @@ function handleCommand(command, data, channel)
 		
 		setVal("ignoreChals", data[0].toLowerCase());
 		printMessage("Auto-ignore challenges was turned " + data[0].toLowerCase() + "!");
+	}
+	else if (cmp(command, "setsep") || cmp(command, "setseparater"))
+	{
+		if (data[0] === undefined)
+		{
+			printMessage("what");
+			return;
+		}
+		
+		setVal("sep", data[0]);
+		printMessage("Command parameter separater was changed to: <b>" + data[0] + "</b>");
 	}
 	
 	
