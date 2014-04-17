@@ -1,4 +1,4 @@
-// You can now combine enriched text things (/*ok*/ would be <i><b>ok</b></i>)! Also, you can change the string used to separate the parameters for commands from a semicolon.<br><br>If you find any bugs, please report them!<br><b>I totally won't kill you, haha!!!!!!!!!!</b> //
+// You can now view the What's New with <a href='po:send/((cs))whatsnew' style='text-decoration:none;'><b>((cs))whatsnew</b></a><br><br>I'm too obsessed with this omg<br><br>:saturn: //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
@@ -741,7 +741,7 @@ function handleCommand(command, data, channel)
 
 		printBorder();
 	}
-	else if (command === "lookup")
+	else if (cmp(command, "lookup"))
 	{
 		var id = client.id(data[0]);
 		var user = client.name(id); // for correct case
@@ -762,7 +762,7 @@ function handleCommand(command, data, channel)
 			+ "</h4>"));
 		print("<hr>");
 	}
-	else if (command === "ranking")
+	else if (cmp(command, "ranking"))
 	{
 		if (data[0] === undefined)
 		{
@@ -782,7 +782,7 @@ function handleCommand(command, data, channel)
 
 		client.seeRanking(id);
 	}
-	else if (command === "pm")
+	else if (cmp(command, "pm"))
 	{
 		var id = client.id(data[0]);
 
@@ -799,7 +799,7 @@ function handleCommand(command, data, channel)
 			network.sendPM(id, data[1]);
 		}
 	}
-	else if (command === "changename")
+	else if (cmp(command, "changename"))
 	{
 		var name = data[0];
 
@@ -819,7 +819,7 @@ function handleCommand(command, data, channel)
 			printMessage("There was something wrong with the command symbol specified. Command symbols must be one character in length! <b>You've got more sense than that, " + client.ownName() + "!</b>");
 		}
 	}
-	else if (command === "setbotname")
+	else if (cmp(command, "setbotname"))
 	{
 		var name = data[0];
 
@@ -833,7 +833,7 @@ function handleCommand(command, data, channel)
 			printMessage("There was something wrong with the name you specified. Make sure it's at least one non-space character!");
 		}
 	}
-	else if (command === "setbotcolor" || command === "setbotcolour")
+	else if (cmp(command, "setbotcolor") || cmp(command, "setbotcolour"))
 	{
 		var color = data[0];
 
@@ -848,7 +848,7 @@ function handleCommand(command, data, channel)
 			printMessage("What colour?");
 		}
 	}
-	else if (command === "eval")
+	else if (cmp(command, "eval"))
 	{
 		if (data[0] !== undefined)
 		{
@@ -859,7 +859,7 @@ function handleCommand(command, data, channel)
 			printMessage("Something went wrong. <b><i>It was your fault.</i></b> (What are you trying to eval?)");
 		}
 	}
-	else if (command === "emotes")
+	else if (cmp(command, "emotes"))
 	{
 		if (data[0] === undefined || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 		{
@@ -889,7 +889,7 @@ function handleCommand(command, data, channel)
 			printMessage("Emotes have been enabled. :)");
 		}
 	}
-	else if (command === "update")
+	else if (cmp(command, "update"))
 	{
 		checkForUpdate();
 	}
@@ -905,7 +905,10 @@ function handleCommand(command, data, channel)
 			}
 
 			printMessage("Updated! Backup at: " + sys.scriptsFolder + "backup.js");
-			print("<hr><br>" + center("<h1><u>What's new?</u></h1><br>" + resp.substr(3, resp.substr(3).indexOf("//"))) + "<br><hr>");
+			
+			print((center("<hr><h1><u>What's new?</u></h1><br>"
+				+ resp.substr(3, resp.substr(3).indexOf("//")).replace(/\(\(cs\)\)/g, cs())
+				+ "<br><hr>")).withEmotes());
 			
 			sys.writeToFile(sys.scriptsFolder + "backup.js", sys.getFileContent(sys.scriptsFolder + "scripts.js"));
 
@@ -1110,6 +1113,14 @@ function handleCommand(command, data, channel)
 		
 		setVal("sep", data[0]);
 		printMessage("Command parameter separater was changed to: <b>" + data[0] + "</b>");
+	}
+	else if (cmp(command, "whatsnew"))
+	{
+		var resp = sys.getFileContent(sys.scriptsFolder + "scripts.js");
+		
+		print((center("<hr><h1><u>What's new?</u></h1><br>"
+				+ resp.substr(3, resp.substr(3).indexOf("//")).replace(/\(\(cs\)\)/g, cs())
+				+ "<br><hr>")).withEmotes());
 	}
 	
 	
