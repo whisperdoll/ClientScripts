@@ -1129,6 +1129,6 @@ function handleCommand(command, data, channel)
 	{
 		//printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
 		acceptCommand = false;
-		say("/" + command);
+		say("/" + command + (data.length > 0 ? " " + data.join(getVal("sep")) : "");
 	}
 }
