@@ -1,4 +1,4 @@
-// You can now view the "What's New" with <a href='po:send/((cs))whatsnew' style='text-decoration:none;'><b>((cs))whatsnew</b></a><br><br>I'm too obsessed with this omg<br><br>:saturn: //
+// You can now view the What's New with <a href='po:send/((cs))whatsnew' style='text-decoration:none;'><b>((cs))whatsnew</b></a><br><br>I'm too obsessed with this omg<br><br>:saturn: //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
@@ -1129,6 +1129,6 @@ function handleCommand(command, data, channel)
 	{
 		//printMessage("<b>" + cs() + command + "</b> is not a command! <a href='po:send/" + cs() + "commands'>View commands</a>");
 		acceptCommand = false;
-		say("/" + command + (data.length > 0 ? " " + data.join(getVal("sep")) : "");
+		say("/" + command + (data.length > 0 ? " " + data.join(getVal("sep")) : ""));
 	}
 }
