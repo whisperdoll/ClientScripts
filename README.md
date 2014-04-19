@@ -6,6 +6,10 @@ these will be great one day i promise
 Info
 ====
 
-to use these just c/p from script.js ez
-if you want to add stuff or whatever do it i dont care
-i stole some of the ideas from confetti
+credtis go to mogle and unownone for passibely helpin me to learn things
+
+How To Install
+==============
+
+if you want more feature and things do scripts.js if you want newer and more emotes and less bug download bumble.js
+then put in scrpt window very ease
