@@ -33,11 +33,10 @@ var defaults =
 	"emotes": true
 };
 
-var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
-var emoteUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
+var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
 
 
 
@@ -250,16 +249,16 @@ Utilities =
 		{
 			// get emotes
 			
-			var json = sys.synchronousWebCall(emotesUrl);
+			var ejson = sys.synchronousWebCall(emotesUrl);
 			
-			if (json === "")
+			if (ejson.length < 1)
 			{
 				printMessage("There was a problem downloading emotes. Turning emotes off.");
 				// turn off
 				return;
 			}
 			
-			emotes = JSON.parse(json);
+			ejson = JSON.parse(ejson);
 			this.writeFile(emotesPath, json);
 		}
 		
@@ -506,6 +505,7 @@ PO =
 			
 			msg = Utilities.fixLinks(msg);
 			msg = Utilities.enrich(msg);
+			msg = Utilities.parseEmotes(msg);
 			
 			print("<font color='%1'><timestamp />%2%5<b>%3:</b>%6</font> %4".args([ colour, authSymbol, name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : "") ]), channel, true); // this is cool!!
 		}
