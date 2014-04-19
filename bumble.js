@@ -144,6 +144,8 @@ Utilities =
 			settings = JSON.parse(json);
 			this.saveSettings();
 		}
+		
+		this.loadEmotes();
 	},
 	
 	saveSettings: function()
@@ -157,6 +159,39 @@ Utilities =
 		}
 		
 		this.writeFile(settingsPath, JSON.stringify(settings));
+	},
+	
+	loadEmotes: function(force)
+	{
+		if (force === undefined)
+		{
+			force = false;
+		}
+		
+		this.appendFile(emotesPath, "");
+		
+		if (this.readFile(emotesPath) === "" || force)
+		{
+			// get emotes
+			
+			printMessage("Hang on, getting emotes... This could take a sec...");
+			
+			var ejson = sys.synchronousWebCall(emotesUrl);
+			
+			if (ejson.length < 1)
+			{
+				printMessage("There was a problem downloading emotes. Turning emotes off.");
+				// turn off
+				return;
+			}
+			
+			this.writeFile(emotesPath, ejson);
+			emotes = JSON.parse(ejson);
+		}
+		else
+		{
+			emotes = JSON.parse(this.readFile(emotesPath));
+		}
 	},
 	
 	readFile: function(file)
@@ -243,26 +278,14 @@ Utilities =
 	
 	parseEmotes: function(text)
 	{
-		this.appendFile(emotesPath, "");
-		
-		if (this.readFile(emotesPath) === "")
+		if (!settings["emotes"])
 		{
-			// get emotes
-			
-			var ejson = sys.synchronousWebCall(emotesUrl);
-			
-			if (ejson.length < 1)
-			{
-				printMessage("There was a problem downloading emotes. Turning emotes off.");
-				// turn off
-				return;
-			}
-			
-			ejson = JSON.parse(ejson);
-			this.writeFile(emotesPath, json);
+			return;
 		}
 		
-		var ret = this.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
+		var ret = text;
+		
+		return ret.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
 		{
 			var _emote = emote.substr(1, emote.length - 2);
 			
