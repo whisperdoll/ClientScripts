@@ -1,4 +1,4 @@
-// You can now view the What's New with <a href='po:send/((cs))whatsnew' style='text-decoration:none;'><b>((cs))whatsnew</b></a><br><br>I'm too obsessed with this omg<br><br>:saturn: //
+// Okay you can now click timestamps like (04:43:19) to quote the message! <b>COOL!!!!</b><br><br>Next I'll fix the thing where you cant click old things after changing your symbol. //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
@@ -126,7 +126,7 @@ function checkUpdate(resp, silent)
 
 	if (resp !== sys.getFileContent(sys.scriptsFolder + "scripts.js"))
 	{
-		printMessage("There's an update available! <a href='po:send/" + cs() + "doupdate'>(Click here to update)</a>");
+		printMessage("There's an update available! <a href='po:send/" + sep + sep + "doupdate'>(Click here to update)</a>");
 	}
 	else if (silent === undefined || silent === false)
 	{
@@ -627,16 +627,19 @@ beforeSendMessage: function (message, channel)
 
 	if (m === "/~?")
 	{
+		sys.stopEvent();
 		printMessage("Your command symbol is: <b>" + cs() + "</b>");
 	}
-	else if (m.substr(0, cs().length) === cs() && acceptCommand)
+	else if ((m.substr(0, cs().length) === cs() || m.substr(0, 2) === sep + sep) && acceptCommand)
 	{
 		sys.stopEvent();
+		m = m.replace(sep + sep, cs());
 		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(getVal("sep")) : [undefined]), channel);
 	}
-	else if (m.substr(0, cs().length) === cs() && !acceptCommand)
+	else if ((m.substr(0, cs().length) === cs() || m.substr(0, 2) === sep + sep) && !acceptCommand)
 	{
 		sys.stopEvent();
+		m = m.replace(sep + sep, cs());
 		acceptCommand = true;
 		handleCommand(m.split(" ")[0].substr(cs().length), ((m.indexOf(" ") !== -1 && m.replace(/ /g, "").length < m.length) ? m.substr(m.indexOf(" ") + 1).split(getVal("sep")) : [undefined]), channel);
 
@@ -674,7 +677,8 @@ beforeChannelMessage: function (message, channel, html)
 		if (cmp(getVal("etext", "on"), "on"))
 			msg = escapeHTML(msg).enriched();
 
-		var cmd = "po:send/" + cs() + "lookup " + name;
+		var cmd = "po:send/" + sep + sep + "lookup " + name;
+		var cmd2 = "po:setmsg/<timestamp />" + message.replace(/'/g, "((sq))");
 
 		msg = msg.replace(/\//g, sep);
 		
@@ -709,7 +713,7 @@ beforeChannelMessage: function (message, channel, html)
 
 		msg = msg.replace(/\<i\>\/(.+)\/\<\/i\>/g, "//$1//");
 
-		print("<a href='" + cmd + "' style='text-decoration:none;'><font color='" + colour + "'><timestamp /> " + (client.auth(id) > 0 ? (getVal("emotes", "on") === "on" ? getVal("auth" + client.auth(id)).withEmotes() : getVal("auth" + client.auth(id))) + "<b><i>" + name + ":</i>" : getVal("auth0") + "<b>" + name + ":") + "</b></font></a> " + msg, channel);
+		print("<a href='" + cmd2 + "' style='text-decoration:none; color:" + colour + ";'><timestamp /></a><a href='" + cmd + "' style='text-decoration:none; color:" + colour + ";'> " + (client.auth(id) > 0 ? (getVal("emotes", "on") === "on" ? getVal("auth" + client.auth(id)).withEmotes() : getVal("auth" + client.auth(id))) + "<b><i>" + name + ":</i>" : getVal("auth0") + "<b>" + name + ":") + "</b></a> " + msg, channel);
 	}
 
 },
@@ -719,7 +723,30 @@ beforeChallengeReceived: function(challengeId, opponentId, tier, clauses)
 	{
 		sys.stopEvent();
 	}
+},
+onPlayerReceived: function(id)
+{
+	var friendslist = getVal("friendslist", "");
+	
+	if (friendslist === "")
+	{
+		return;
+	}
+	
+	friendslist = (friendslist.indexOf(";") === -1 ? [ friendslist ] : friendslist.split(";"));
+	
+	for (var i = 0; i < friendslist.length; i++)
+	{
+		if (cmp(friendslist[i], client.name(id)))
+		{
+			printMessage(client.name(id) + " is <b><font color='green'>online!</font></b><ping />");
+		}
+	}
+	
 }
+
+
+
 
 })
 
@@ -757,7 +784,7 @@ function handleCommand(command, data, channel)
 
 		print("<hr>");
 		print(center(botHTML() + " Here's info for " + user + ":<br /><br /><img src='trainer:" + avatar + "'></img><h3><i><font color='" + client.color(id) + "'>" + user + "</font></i></h3><h4>" + "ID: " + client.id(user) + "<br />" + "Auth Level: " + client.auth(id) + "<br />" + "Ignoring?: " + (client.isIgnored(id) ? "Yes" : "No") + "<br />" + "Colour: <font color='" + client.color(id) + "'><b>" + client.color(id) + "</b></font> / " + htr + "<br />" + "Tiers: " + client.tiers(id).join(", ") + "<br />" + "Actions: <a href='po:pm/" + id + "'>PM</a>, <a href='po:info/" + id + "'>Challenge</a>" + (isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "") + ", " + "<a href='po:ignore/" + id + "'>Toggle Ignore</a>, " // dont say ignore/unignore bc after you ignore 'toggle ignore' is still relevant
-			+ "<a href='po:send/" + cs() + "ranking " + user + "'>View Rank</a>"
+			+ "<a href='po:send/" + sep + sep + "ranking " + user + "'>View Rank</a>"
 
 			+ "</h4>"));
 		print("<hr>");
@@ -869,7 +896,7 @@ function handleCommand(command, data, channel)
 			}
 			else
 			{
-				printMessage("Emotes are currently off. <a href='po:send/" + cs() + "emotes on'>(Turn on)</a>");
+				printMessage("Emotes are currently off. <a href='po:send/" + sep + sep + "emotes on'>(Turn on)</a>");
 			}
 		}
 		else if (cmp(data[0], "off"))
@@ -933,7 +960,7 @@ function handleCommand(command, data, channel)
 				}
 				else
 				{
-					printMessage("That's already a stalkword you peporini piza! <a href='po:send/" + cs() + "stalkwords'>(View stalkwords)</a>");
+					printMessage("That's already a stalkword you peporini piza! <a href='po:send/" + sep + sep + "stalkwords'>(View stalkwords)</a>");
 				}
 			}
 			else
@@ -957,7 +984,7 @@ function handleCommand(command, data, channel)
 			{
 				if (!cmp(stalkwords, data[0]) && stalkwords.split(sep).indexOf(data[0]) === -1)
 				{
-					printMessage("That's not one of your stalkwords!!!! <a href='po:send/" + cs() + "stalkwords'>(View stalkwords)</a>");
+					printMessage("That's not one of your stalkwords!!!! <a href='po:send/" + sep + sep + "stalkwords'>(View stalkwords)</a>");
 					return;
 				}
 
@@ -985,7 +1012,7 @@ function handleCommand(command, data, channel)
 
 		if (stalkwords === "")
 		{
-			printMessage("No stalkwords! <a href='po:setmsg/" + cs() + "addstalkword [stalkword]'>(Add stalkword)</a>");
+			printMessage("No stalkwords! <a href='po:setmsg" + sep + sep + "addstalkword [stalkword]'>(Add stalkword)</a>");
 			return;
 		}
 
@@ -1002,7 +1029,7 @@ function handleCommand(command, data, channel)
 				continue;
 			}
 
-			printMessage("" + stalkword + " <a href='po:send/" + cs() + "removestalkword " + stalkword + "'>(Remove)</a>");
+			printMessage("" + stalkword + " <a href='po:send/" + sep + sep + "removestalkword " + stalkword + "'>(Remove)</a>");
 		}
 
 		setVal("stalkwords", _stalkwords.join(sep));
@@ -1096,7 +1123,7 @@ function handleCommand(command, data, channel)
 	{
 		if (data[0] === undefined || (!cmp(data[0], "off") && !cmp(data[0], "on")))
 		{
-			printMessage("What? <a href='po:send/" + cs() + "ignorechallenges on'>On</a> or <a href='po:/send/" + cs() + "ignorechallenges off'>off</a>?");
+			printMessage("What? <a href='po:send/" + sep + sep + "ignorechallenges on'>On</a> or <a href='po:/send" + sep + sep + "ignorechallenges off'>off</a>?");
 			return;
 		}
 		
@@ -1121,6 +1148,97 @@ function handleCommand(command, data, channel)
 		print((center("<hr><h1><u>What's new?</u></h1><br>"
 				+ resp.substr(3, resp.substr(3).indexOf("//")).replace(/\(\(cs\)\)/g, cs())
 				+ "<br><hr>")).withEmotes());
+	}
+	else if (cmp(command, "setmsg"))
+	{
+		if (data[0] === undefined)
+		{
+			return;
+		}
+		
+		// fuck
+	}
+	else if (cmp(command, "addfriend"))
+	{
+		if (data[0] === undefined)
+		{
+			printMessage("Add who?");
+			return;
+		}
+		
+		var friendslist = getVal("friendslist", "");
+		
+		if (friendslist === "")
+		{
+			setVal("friendslist", data[0]);
+			printMessage(data[0] + " was added to your friends list!");
+			return;
+		}
+		
+		friendslist = (friendslist.indexOf(";") === -1 ? [ friendslist ] : friendslist.split(";"));
+		
+		if (friendslist.indexOf(data[0]) !== -1)
+		{
+			printMessage("That person is already on your friends list!");
+			return;
+		}
+		
+		friendslist.push(data[0]);
+		
+		setVal("friendslist", friendslist.join(";"));
+		printMessage(data[0] + " was added to your friends list!");
+	}
+	else if (cmp(command, "removefriend"))
+	{
+		if (data[0] === undefined)
+		{
+			printMessage("Remove who?");
+			return;
+		}
+		
+		var friendslist = getVal("friendslist", "");
+		
+		if (friendslist === "")
+		{
+			printMessage("Your friends list is empty!");
+			return;
+		}
+		
+		friendslist = (friendslist.indexOf(";") === -1 ? [ friendslist ] : friendslist.split(";"));
+		
+		if (friendslist.indexOf(data[0]) === -1)
+		{
+			printMessage("That person is not on your friends list!");
+			return;
+		}
+		
+		friendslist = friendslist.splice(friendslist.indexOf(data[0]), 1);
+	
+		
+		setVal("friendslist", (friendslist.length === 0 ? "" : (friendslist.length === 1 ? friendslist : friendslist.join(";"))));
+		printMessage(data[0] + " was removed from your friends list!");
+	}
+	else if (cmp(command, "friendslist"))
+	{		
+		var friendslist = getVal("friendslist", "");
+		
+		if (friendslist === "")
+		{
+			printMessage("Your friends list is empty!");
+			return;
+		}
+		
+		friendslist = (friendslist.indexOf(";") === -1 ? [ friendslist ] : friendslist.split(";"));
+		
+		printBorder();
+		printMessage(header("Friends:"));
+		
+		for (var i = 0; i < friendslist.length; i++)
+		{
+			printMessage(friendslist[i] + " <a href='po:sendmsg/" + sep + sep + "removefriend " + friendslist[i] + "'>(Remove)</a>");
+		}
+		
+		printBorder();
 	}
 	
 	

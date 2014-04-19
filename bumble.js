@@ -9,8 +9,10 @@ var celebiPic = "<img alt=':3' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUg
 var acceptCommand = true;
 
 var initCheck = false;
+var emotesCheck = false;
 
 var settings = {};
+var emotes = {};
 
 var defaults =
 {
@@ -33,6 +35,9 @@ var defaults =
 
 var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
+
+var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
+var emoteUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
 
 
 
@@ -239,7 +244,37 @@ Utilities =
 	
 	parseEmotes: function(text)
 	{
-		return text;
+		this.appendFile(emotesPath, "");
+		
+		if (this.readFile(emotesPath) === "")
+		{
+			// get emotes
+			
+			var json = sys.synchronousWebCall(emotesUrl);
+			
+			if (json === "")
+			{
+				printMessage("There was a problem downloading emotes. Turning emotes off.");
+				// turn off
+				return;
+			}
+			
+			emotes = JSON.parse(json);
+			this.writeFile(emotesPath, json);
+		}
+		
+		var ret = this.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
+		{
+			var _emote = emote.substr(1, emote.length - 2);
+			
+			if (emotes.hasOwnProperty(_emote))
+			{
+				var data = emotes[_emote];
+				return "<img src='%1'>".args([ data ]);
+			}
+			
+			return emote;
+		});
 	},
 	
 	randomInt: function(arg1, arg2)
