@@ -32,9 +32,12 @@ var defaults =
 		"4": ""
 	},
 	"enrichedText": true,
-	"emotes": true
+	"emotes": true,
+	"flashColour": "gold",
+	"stalkwords": []
 };
 
+var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
@@ -112,6 +115,54 @@ function botHTML(timestamp, colon, symbol)
 	return "<font color='" + settings["botColour"] + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? settings["botSymbol"] : "")
 		+ settings["botName"] + (colon ? ":" : "") + "</font></b>";
 }
+
+function cmp(x1, x2)
+{
+	if (typeof x1 !== typeof x2)
+	{
+		return false;
+	}
+	else if (typeof x1 === "string")
+	{
+		if (x1.toLowerCase() === x2.toLowerCase())
+		{
+			return true;
+		}
+	}
+	return x1 === x2;
+}
+
+Array.prototype.indexOf = function (item)
+{
+	if (cmp(this, item))
+		return 0;
+
+	for (var i = 0; i < this.length; i++)
+	{
+		if (cmp(this[i], item))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+};
+
+String.prototype.indexOf = function (str)
+{
+	if (str.length > this.length)
+		return -1;
+	if (cmp(str, this))
+		return 0;
+
+	for (var i = 0; i < this.length; i++)
+	{
+		if (cmp(this.substr(i, str.length), str))
+			return i;
+	}
+
+	return -1;
+};
 
 
 
@@ -261,6 +312,11 @@ Utilities =
         }
 	},
 	
+	escapeRegex: function(text)
+	{
+		return text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+	},
+	
 	fixLinks: function(message)
 	{
 		return message.replace(/([a-zA-Z]+:\/\/|www\.)([^\s']+)/ig, "<a href='$1$2'>$1$2</a>");
@@ -295,11 +351,11 @@ Utilities =
 			return;
 		}
 		
-		var ret = text.toLowerCase();
+		var ret = text;
 		
 		return ret.replace(/:([a-z0-9\+\-_#]+):/g, function(emote)
 		{
-			var _emote = emote.substr(1, emote.length - 2);
+			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
 			
 			if (emotes.hasOwnProperty(_emote))
 			{
@@ -363,6 +419,7 @@ Commands =
 			}
 			
 			settings["botColour"] = data[0];
+			Utilities.saveSettings();
 			printMessage("Colour changed to <b><font color='%1'>%1</font></b>!".args([ data[0] ]));
 		}
 		else if (command === "setbotname" || command === "setbn")
@@ -374,6 +431,7 @@ Commands =
 			}
 			
 			settings["botName"] = data[0];
+			Utilities.saveSettings();
 			printMessage("Call me %1!".args([ botHTML(false, false, false) ]));
 		}
 		else if (command === "setbotsymbol" || command == "setbs")
@@ -385,6 +443,7 @@ Commands =
 			}
 			
 			settings["botSymbol"] = data[0];
+			Utilities.saveSettings();
 			printMessage("Changed symbol to <b>%1</b>!".args([ data[0] ]));
 		}
 		else if (command === "changename")
@@ -421,6 +480,7 @@ Commands =
 			}
 			
 			settings["authSymbols"][level] = data[0];
+			Utilities.saveSettings();
 			printMessage("Symbol for %1-level auth changed to <b>%2</b>!".args([ level, data[0] ]));
 		}
 		else if (command === "randomno" || command === "random" || command === "randomint" || command ==="randomnumber")
@@ -458,10 +518,67 @@ Commands =
 			printMessage("One sec...");
 			print("<hr><br>%1 Here are all of the emotes:<br>%2<br><hr>".args([ botHTML(), emoteString ]));
 		}
+		else if (command === "addstalkword")
+		{
+			if (params === 0)
+			{
+				printMessage("Add what to stalkwords?");
+				return;
+			}
+			
+			var stalkwords = settings["stalkwords"];
+			
+			if (stalkwords.indexOf(data[0]) !== -1)
+			{
+				printMessage("That's already in your stalkwords!");
+				return;
+			}
+			
+			stalkwords.push(data[0]);
+			settings["stalkwords"] = stalkwords;
+			Utilities.saveSettings();
+			
+			printMessage("%1 added to stalkwords!".args([ data[0] ]));
+		}
+		else if (command === "removestalkword")
+		{
+			if (params === 0)
+			{
+				printMessage("Remove what from stalkwords?");
+				return;
+			}
+			
+			var stalkwords = settings["stalkwords"];
+			
+			if (stalkwords.indexOf(data[0]) === -1)
+			{
+				printMessage("That's not in your stalkwords!");
+				return;
+			}
+			
+			stalkwords.splice(stalkwords.indexOf(data[0]), 1);
+			settings["stalkwords"] = stalkwords;
+			Utilities.saveSettings();
+			
+			printMessage("%1 removed from stalkwords!".args([ data[0] ]));
+		}
+		else if (command === "stalkwords")
+		{
+			var stalkwords = settings["stalkwords"];
+			
+			print("<hr><br>%1 <b><u>Stalkwords:</u></b>".args([ botHTML() ]));
+			
+			for (var i = 0; i < stalkwords.length; i++)
+			{
+				printMessage(stalkwords[i]);
+			}
+			
+			print("<hr>");
+		}
 		
 		
 		
-		
+		// redir
 		else
 		{
 			acceptCommand = false;
@@ -552,7 +669,21 @@ PO =
 			msg = Utilities.enrich(msg);
 			msg = Utilities.parseEmotes(msg);
 			
-			print("<font color='%1'><timestamp />%2%5<b>%3:</b>%6</font> %4".args([ colour, authSymbol, name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : "") ]), channel, true); // this is cool!!
+			var _msg = msg;
+			
+			var stalkwords = settings["stalkwords"].slice(0);
+			stalkwords.push(client.ownName());
+			
+			for (var i = 0; i < stalkwords.length; i++)
+			{
+				msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s)", "gi"), 
+					"$1<span style='background:%1'>$2</span><ping />$3".args([ settings["flashColour"] ]));
+			}
+				
+			var flash = msg !== _msg;
+			
+			print("%7<font color='%1'><timestamp />%2%5<b>%3:</b>%6</font> %4%8"
+				.args([ colour, authSymbol, name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : "") ]), channel, true); // this is cool!!
 		}
 	}
 });
