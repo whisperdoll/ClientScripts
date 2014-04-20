@@ -16,6 +16,8 @@ var emotes = {};
 
 var emoteString = "";
 
+var tiers; // this is an object!!!
+
 var defaults =
 {
 	"botColour": "green",
@@ -42,6 +44,7 @@ var emotesPath = "emotes.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
+var tiersUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/tiers.json";
 
 
 
@@ -73,6 +76,19 @@ function init()
 	}
 	
 	Utilities.loadSettings();
+	
+	printMessage("Fetching tiers...");
+	tiers = sys.synchronousWebCall(tiersUrl);
+	
+	if (tiers === "")
+	{
+		printMessage("I couldn't get the tiers " + emotes.unamused);
+		tiers = undefined;
+		return;
+	}
+	
+	tiers = JSON.parse(tiers);
+	printMessage("Got 'em!");
 }
 
 function print(message, channel, html)
@@ -620,6 +636,82 @@ Commands =
 					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "")]));
 				
 			print("<hr>");
+		}
+		else if (command === "tier")
+		{
+			if (tiers === undefined)
+			{
+				printMessage("I don't have the tiers. You could try relogging " + emotes.unamused);
+				return;
+			}
+			
+			var tierList = [];
+			
+			for (var tier in tiers)
+			{
+				if (tiers.hasOwnProperty(tier))
+				{
+					tierList.push(tier.toString());
+				}
+			}
+			
+			if (params === 0 || tierList.indexOf(data[0]) === -1)
+			{
+				printMessage("Tiers I know about: " + tierList.join(", "));
+				return;
+			}
+			
+			var cc = tierList[tierList.indexOf(data[0])];
+			
+			print(Utilities.centerText("<hr><h1>%1</h1><h3>%2</h3><hr>").args([ cc, tiers[cc] ]));
+		}
+		else if (command === "usage")
+		{
+			var tierList = client.getTierList();
+			
+			if (params === 0 || tierList.indexOf(data[0]) === -1)
+			{
+				printMessage("Tiers: " + tierList.join(", "));
+				return;
+			}
+			
+			var url = "http://stats.pokemon-online.eu/%1/".args([ tierList[tierList.indexOf(data[0])].replace(/ /g, "%20") ]);
+			
+			printMessage("Fetching usage stats...");
+			
+			var html = sys.synchronousWebCall(url + "index.html");
+			
+			if (html === "")
+			{
+				printMessage("Couldn't fetch it!");
+				return;
+			}
+			
+			html = html.replace(/\r/gi, "").split("\n");
+			
+			// html is array now //
+			
+			var pokes = [];
+			
+			for (var i = 0; i < html.length; i++)
+			{
+				var line = html[i].trim();
+				
+				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>" && pokes.length < 100)
+				{
+					var ind = line.indexOf("html'>");
+					
+					var poke = line.substr(ind + 6);
+					poke = poke.substr(0, poke.indexOf("</a>"));
+					
+					var _poke = "<a href='%1' style='text-decoration:none'>%2</a>".args([ url + sys.pokeNum(poke) + ".html", poke]);
+					
+					pokes.push("#%1 - %2 %3".args([ (pokes.length + 1), "<img src='" + emotes["icon" + (sys.pokeNum(poke) > 900 ? "0" : sys.pokeNum(poke))] + "'>", _poke ]));
+					//print(html[i]);
+				}
+			}
+			
+			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], pokes.join("<br>") ]));
 		}
 		
 		
