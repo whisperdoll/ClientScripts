@@ -49,9 +49,11 @@ String.prototype.args = function(arg)
 {
 	var ret = this;
 	
+	ret = ret.replace(/(%[0-9]+)/g, "($1)");
+	
 	for (var i = 0; i < arg.length; i++)
 	{
-		ret = ret.replace(new RegExp("%" + (i + 1)), arg[i].toString()); // i + 1 because it's not zero-based!
+		ret = ret.replace(new RegExp("\\(%" + (i + 1) + "\\)", "g"), arg[i].toString());
 	}
 	
 	return ret;
@@ -382,6 +384,20 @@ Utilities =
 		{
 			return Math.floor(Math.random() * arg1);
 		}
+	},
+	
+	hexToRgb: function(hex)
+	{
+		hex = hex.toString();
+
+		hex = hex.replace(/#/g, "");
+
+		var bigint = parseInt(hex, 16);
+		var r = (bigint >> 16) & 255;
+		var g = (bigint >> 8) & 255;
+		var b = bigint & 255;
+
+		return "(" + r + ", " + g + ", " + b + ")";
 	}
 });
 
@@ -575,6 +591,36 @@ Commands =
 			
 			print("<hr>");
 		}
+		else if (command ==="lookup")
+		{
+			var id = client.id(data[0]);
+			var user = client.name(id); // for correct case
+
+			if (id === -1)
+			{
+				printMessage("That user is not on the server!");
+				return;
+			}
+
+			var avatar = client.player(id).avatar;
+			var htr = Utilities.hexToRgb(client.color(id));
+
+			print("<hr>");
+			
+			print(Utilities.centerText("%1 Here's info for %2:<br /><br /><img src='trainer:%3'></img><h3><i><font color='%4'>%2</font></i></h3><h4>" 
+				+ "ID:%5<br />"
+				+ "Auth Level:%6<br />"
+				+ "Ignoring?: %7<br />"
+				+ "Colour: <font color='%4'><b>%4</b></font> / %8<br />" 
+				+ "Tiers: %9" + "<br />"
+				+ "Actions: <a href='po:pm/%5'>PM</a>, <a href='po:info/%5'>Challenge</a>%10"
+					+ ", <a href='po:ignore/%5'>Toggle Ignore</a>"
+				+ "</h4>")
+				.args([ botHTML(), user, avatar, client.color(id), id, client.auth(id), (client.isIgnored(id) ? "Yes" : "No"), htr, client.tiers(id).join(", "),
+					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "")]));
+				
+			print("<hr>");
+		}
 		
 		
 		
@@ -683,7 +729,7 @@ PO =
 			var flash = msg !== _msg;
 			
 			print("%7<font color='%1'><timestamp />%2%5<b>%3:</b>%6</font> %4%8"
-				.args([ colour, authSymbol, name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : "") ]), channel, true); // this is cool!!
+				.args([ colour, Utilities.parseEmotes(authSymbol), name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : "") ]), channel, true); // this is cool!!
 		}
 	}
 });
