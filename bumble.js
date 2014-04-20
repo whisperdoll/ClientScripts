@@ -14,6 +14,8 @@ var emotesCheck = false;
 var settings = {};
 var emotes = {};
 
+var emoteString = "";
+
 var defaults =
 {
 	"botColour": "green",
@@ -192,6 +194,16 @@ Utilities =
 		{
 			emotes = JSON.parse(this.readFile(emotesPath));
 		}
+		
+		emoteString = "";
+		
+		for (var x in emotes)
+		{
+			if (emotes.hasOwnProperty(x))
+			{
+				emoteString += "<a href='po:appendmsg/:%1:'>%2</a> ".args([ x, this.parseEmotes(":" + x + ":")]);
+			}
+		}
 	},
 	
 	readFile: function(file)
@@ -276,16 +288,16 @@ Utilities =
 		return ret;
 	},
 	
-	parseEmotes: function(text)
+	parseEmotes: function(text, force)
 	{
-		if (!settings["emotes"])
+		if (!settings["emotes"] && !force)
 		{
 			return;
 		}
 		
-		var ret = text;
+		var ret = text.toLowerCase();
 		
-		return ret.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
+		return ret.replace(/:([a-z0-9\+\-_#]+):/g, function(emote)
 		{
 			var _emote = emote.substr(1, emote.length - 2);
 			
@@ -295,8 +307,13 @@ Utilities =
 				return "<img src='%1'>".args([ data ]);
 			}
 			
-			return emote;
+			return ":" + _emote + ":";
 		});
+	},
+	
+	capitalize: function(str)
+	{
+		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1).toLowerCase() : "");
 	},
 	
 	randomInt: function(arg1, arg2)
@@ -435,6 +452,11 @@ Commands =
 			var res = Utilities.randomInt(min, max);
 			
 			printMessage("Random number between %1 and %2: <b>%3</b>".args([ min, max, res ]));
+		}
+		else if (command === "emotes")
+		{
+			printMessage("One sec...");
+			print("<hr><br>%1 Here are all of the emotes:<br>%2<br><hr>".args([ botHTML(), emoteString ]));
 		}
 		
 		
