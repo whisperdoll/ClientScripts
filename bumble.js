@@ -97,7 +97,7 @@ function init()
 	{
 		// say hi! //
 		
-		print(Utilities.centerText("<hr><h1>Hi!</hr><h3>Type ~commandslist to get started!</h3><br />" + celebiPic + "<hr>"));
+		print(Utilities.centerText("<hr><h1>Hi!</hr><h3>Type <b><a href='po:send//commandslist' style='text-decoration:none;'>~commandslist</a></b> to get started!</h3><br />" + celebiPic + "<hr>"));
 	}
 	
 	Utilities.loadSettings();
@@ -225,22 +225,18 @@ Utilities =
 			{
 				// load default //
 				settings = defaults;
-				this.saveSettings();
-				return;
 			}
 			else
 			{
 				settings = JSON.parse(this.readFile(settingsPath));
-				
-				this.saveSettings();
 			}
 		}
 		else
 		{
 			settings = JSON.parse(json);
-			this.saveSettings();
 		}
 		
+		this.saveSettings();
 		this.loadEmotes();
 	},
 	
@@ -280,6 +276,8 @@ Utilities =
 				// turn off
 				return;
 			}
+			
+			printMessage("Got 'em! See your emotes with <b><a href='po:send//emotes' style='text-decoration:none;'>%1emotes</a></b>!".args([ settings["commandSymbol"] ]));
 			
 			this.writeFile(emotesPath, ejson);
 			emotes = JSON.parse(ejson);
