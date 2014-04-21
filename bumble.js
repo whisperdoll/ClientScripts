@@ -16,8 +16,6 @@ var emotes = {};
 
 var emoteString = "";
 
-var tiers; // this is an object!!!
-
 var defaults =
 {
 	"botColour": "green",
@@ -36,7 +34,8 @@ var defaults =
 	"enrichedText": true,
 	"emotes": true,
 	"flashColour": "gold",
-	"stalkwords": []
+	"stalkwords": [],
+	"friends": []
 };
 
 var settingsPath = "bumble.json";
@@ -44,8 +43,34 @@ var emotesPath = "emotes.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
-var tiersUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/tiers.json";
 
+var commands = [
+	"commandslist - Shows commands",
+	"lookup [name] - Displays information about [name]",
+	"pm [name] - Opens PM window with [name] selected",
+	"ranking [name] - Opens ranking window and selects [name]",
+	"changename [name] - Attempts to change your name to [name]",
+	"setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
+	"setbotname [name] - Changes my name to [name]",
+	"setbotcolour [colour] - Changes my colour to [colour]",
+	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
+	"emotes - Shows available emotes",
+	//"emotes [on/off] - Enables/disables emotes",
+	//"update - Checks for updates",
+	"stalkwords - Shows a list of your stalkwords",
+	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
+	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
+	"friends - Shows a list of your friends",
+	"addfriend [name] - Adds [name] to your friends",
+	"removefriend [name] - Removes [name] from your friends",
+	//"enrichedtext [on/off] - Enables or disables enriched text",
+	//"setauthsymbol [symbol] - Changes symbol used to denote auth",
+	"setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
+	//"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
+	//"updateemotes - Downloads the emotes file",
+	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
+	//"setseparater [separater] - Sets the command parameter separater to [separater]"
+];
 
 
 String.prototype.args = function(arg)
@@ -76,19 +101,6 @@ function init()
 	}
 	
 	Utilities.loadSettings();
-	
-	printMessage("Fetching tiers...");
-	tiers = sys.synchronousWebCall(tiersUrl);
-	
-	if (tiers === "")
-	{
-		printMessage("I couldn't get the tiers " + emotes.unamused);
-		tiers = undefined;
-		return;
-	}
-	
-	tiers = JSON.parse(tiers);
-	printMessage("Got 'em!");
 }
 
 function print(message, channel, html)
@@ -182,7 +194,20 @@ String.prototype.indexOf = function (str)
 	return -1;
 };
 
+String.prototype.parseCmdDesc = function ()
+{
+	var cmd = "<b>" + this.split(" ")[0] + "</b>";
+	var params = this.substr(this.split(" ")[0].length).split(" - ")[0];
+	var desc = this.substr(this.indexOf(" - "));
+	var sep = settings["paramSeparater"];
 
+	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
+	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
+
+	var ret = "<a href='po:setmsg//" + this.substr(1, this.indexOf(" - ")) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
+
+	return ret;
+};
 
 
 
@@ -297,7 +322,7 @@ Utilities =
 	
 	getMessage: function(message)
 	{
-		return (message.indexOf(": ") !== -1 ? message.substr(message.indexOf(":") + 1) : message);
+		return (message.indexOf(": ") !== -1 ? message.substr(message.indexOf(":") + 2) : message);
 	},
 	
 	getUser: function(message)
@@ -426,7 +451,18 @@ Commands =
 		
 		if (command === "commandslist")
 		{
-			printMessage("Hey, no commands yet. :3");
+			print("<hr><br>");
+
+			printMessage("<u><b>Commands:</b></u>");
+			
+			var cs = settings["commandSymbol"];
+
+			for (var i = 0; i < commands.length; i++)
+			{
+				printMessage((cs + commands[i]).parseCmdDesc());
+			}
+
+			print("<br><hr>");
 		}
 		else if (command === "setcs" || command === "setcommandsymbol")
 		{
@@ -600,9 +636,68 @@ Commands =
 			
 			print("<hr><br>%1 <b><u>Stalkwords:</u></b>".args([ botHTML() ]));
 			
-			for (var i = 0; i < stalkwords.length; i++)
+			if (stalkwords.length > 0)
 			{
-				printMessage(stalkwords[i]);
+				for (var i = 0; i < stalkwords.length; i++)
+				{
+					printMessage(stalkwords[i]);
+				}
+			}
+			else
+			{
+				printMessage("You have no stalkwords!");
+			}
+			
+			print("<hr>");
+		}
+		else if (command === "addfriend")
+		{
+			var friends = settings["friends"];
+			
+			if (friends.indexOf(data[0]) !== -1)
+			{
+				printMessage(data[0] + " is already on your friends list!");
+				return;
+			}
+			
+			friends.push(data[0]);
+			settings["friends"] = friends;
+			Utilities.saveSettings();
+			
+			printMessage("%1 was added to your friends list!".args([ data[0] ])); // i might word it difernt later is why args
+		}
+		else if (command === "removefriend")
+		{
+			var friends = settings["friends"];
+			
+			if (friends.indexOf(data[0]) === -1)
+			{
+				printMessage(data[0] + " is not on your friends list!");
+				return;
+			}
+			
+			friends.splice(friends.indexOf(data[0]), 1);
+			settings["friends"] = friends;
+			Utilities.saveSettings();
+			
+			printMessage("%1 was removed from your friends list!".args([ data[0] ])); // i might word it difernt later is why args
+		}
+		else if (command === "friends")
+		{
+			var friends = settings["friends"];
+			
+			print("<hr><br>%1 <b><u>Friends:</u></b>".args([ botHTML() ]));
+			
+			if (friends.length > 0)
+			{
+				for (var i = 0; i < friends.length; i++)
+				{
+					printMessage(friends[i]);
+				}
+			}
+			else
+			{
+				printMessage("You have no friends! ...Was that mean?");
 			}
 			
 			print("<hr>");
@@ -636,34 +731,6 @@ Commands =
 					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "")]));
 				
 			print("<hr>");
-		}
-		else if (command === "tier")
-		{
-			if (tiers === undefined)
-			{
-				printMessage("I don't have the tiers. You could try relogging " + emotes.unamused);
-				return;
-			}
-			
-			var tierList = [];
-			
-			for (var tier in tiers)
-			{
-				if (tiers.hasOwnProperty(tier))
-				{
-					tierList.push(tier.toString());
-				}
-			}
-			
-			if (params === 0 || tierList.indexOf(data[0]) === -1)
-			{
-				printMessage("Tiers I know about: " + tierList.join(", "));
-				return;
-			}
-			
-			var cc = tierList[tierList.indexOf(data[0])];
-			
-			print(Utilities.centerText("<hr><h1>%1</h1><h3>%2</h3><hr>").args([ cc, tiers[cc] ]));
 		}
 		else if (command === "usage")
 		{
@@ -713,6 +780,54 @@ Commands =
 			
 			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], pokes.join("<br>") ]));
 		}
+		else if (command === "pm")
+		{
+			if (params === 0)
+			{
+				printMessage("PM who?");
+				return;
+			}
+			
+			var id = client.id(data[0]);
+			
+			if (id === 0)
+			{
+				printMessage("You can't PM that person!");
+				return;
+			}
+			
+			client.startPM(id);
+		}
+		else if (command === "ranking")
+		{
+			if (params === 0)
+			{
+				acceptCommand = false;
+				say("/ranking");
+				return;
+			}
+
+			var id = client.id(data[0]);
+
+			if (client.getTierList().indexOf(data[0]) !== -1)
+			{
+				acceptCommand = false;
+				say("/ranking " + data[0]);
+				return;
+			}
+
+			client.seeRanking(id);
+		}
+		else if (command === "eval")
+		{
+			if (params === 0)
+			{
+				printMessage("What am I supposed to eval?");
+				return;
+			}
+			
+			print("<hr><br><code>%1</code> returns:<br>%2<br><hr>".args([ data[0], eval(data[0]) ]));
+		}
 		
 		
 		
@@ -720,7 +835,7 @@ Commands =
 		else
 		{
 			acceptCommand = false;
-			say("/" + command + (params > 0 ? data.join(settings["paramSeparater"]) : ""));
+			say("/" + command + (params > 0 ? " " + data.join(settings["paramSeparater"]) : ""));
 		}
 	}
 	
@@ -738,7 +853,7 @@ PO =
 		
 		var commandSymbol = settings["commandSymbol"];
 		
-		if (message.substr(0, commandSymbol.length) === commandSymbol && acceptCommand)
+		if ((message.substr(0, commandSymbol.length) === commandSymbol || message.charAt(0) === "/") && acceptCommand)
 		{			
 			sys.stopEvent();
 			
@@ -820,8 +935,28 @@ PO =
 				
 			var flash = msg !== _msg;
 			
-			print("%7<font color='%1'><timestamp />%2%5<b>%3:</b>%6</font> %4%8"
-				.args([ colour, Utilities.parseEmotes(authSymbol), name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : "") ]), channel, true); // this is cool!!
+			print("%7<font color='%1'><a href='po:setmsg/%10' %11><timestamp /><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
+					.args([ colour, Utilities.parseEmotes(authSymbol), name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : ""),
+						u, "<timestamp />" + u + ": " + m, "style='text-decoration:none; color:" + colour + ";'" ]), 
+				channel, true); // this is cool!!
+		}
+	},
+	onPlayerReceived: function(id)
+	{
+		var friends = settings["friends"];
+		
+		if (friends.indexOf(client.name(id)) !== -1)
+		{
+			printMessage("%1 is <b><font color='green'>online!</font></b><ping />".args([ client.name(id) ]));
+		}
+	},
+	onPlayerRemoved: function(id)
+	{
+		var friends = settings["friends"];
+		
+		if (friends.indexOf(client.name(id)) !== -1)
+		{
+			printMessage("%1 went <b><font color='red'>offline!</font></b><ping />".args([ client.name(id) ]));
 		}
 	}
 });
