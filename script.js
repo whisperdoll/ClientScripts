@@ -1,4 +1,4 @@
-// Okay you can now click timestamps like (04:43:19) to quote the message! <b>COOL!!!!</b><br><br>Next I'll fix the thing where you cant click old things after changing your symbol. //
+// These are old, get these: <a href='https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js'>https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js</a> //
 
 /* ***************************************************** */
 /* ********* BUY ME A BIG BOTTLE OF JOGURT!! *********** */
