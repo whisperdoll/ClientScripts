@@ -57,8 +57,8 @@ var commands = [
 	"setbotcolour [colour] - Changes my colour to [colour]",
 	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
 	"emotes - Shows available emotes",
-	//"emotes [on/off] - Enables/disables emotes",
-	//"update - Checks for updates",
+	"emotes [on/off] - Enables/disables emotes",
+	"update - Checks for updates",
 	"stalkwords - Shows a list of your stalkwords",
 	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
 	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
@@ -71,7 +71,9 @@ var commands = [
 	//"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	//"updateemotes - Downloads the emotes file",
 	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
-	//"setseparater [separater] - Sets the command parameter separater to [separater]"
+	//"setseparater [separater] - Sets the command parameter separater to [separater]",
+	"randomno [min];[max] - Gives a random number between [min] and [max]",
+	"usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]"
 ];
 
 
@@ -421,12 +423,12 @@ Utilities =
 	{
 		if (!settings["emotes"] && !force)
 		{
-			return;
+			return text;
 		}
 		
 		var ret = text;
 		
-		return ret.replace(/:([a-z0-9\+\-_#]+):/g, function(emote)
+		return ret.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
 		{
 			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
 			
@@ -633,8 +635,26 @@ Commands =
 		}
 		else if (command === "emotes")
 		{
-			printMessage("One sec...");
-			print("<hr><br>%1 Here are all of the emotes:<br>%2<br><hr>".args([ botHTML(), emoteString ]));
+			if (params === 0)
+			{
+				print("<hr><br>%1 Here are all of the emotes:<br>%2<br><hr>".args([ botHTML(), emoteString ]));
+				return;
+			}
+			
+			if (data[0].toLowerCase() === "on")
+			{
+				settings["emotes"] = true;
+				Utilities.saveSettings();
+				printMessage(Utilities.parseEmotes("Emotes were enabled! :smiley:"));
+				return;
+			}
+			if (data[0].toLowerCase() === "off")
+			{
+				settings["emotes"] = false;
+				Utilities.saveSettings();
+				printMessage("Emotes were disabled! :)");
+				return;
+			}
 		}
 		else if (command === "addstalkword")
 		{
@@ -877,6 +897,10 @@ Commands =
 			}
 			
 			print("<hr><br><code>%1</code> returns:<br>%2<br><hr>".args([ data[0], eval(data[0]) ]));
+		}
+		else if (command === "update")
+		{
+			Utilities.checkForUpdate();
 		}
 		else if (command === "doupdate")
 		{
