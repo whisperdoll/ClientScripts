@@ -16,6 +16,8 @@ var emotes = {};
 
 var emoteString = "";
 
+var fetchedScript = "";
+
 var defaults =
 {
 	"botColour": "green",
@@ -101,6 +103,8 @@ function init()
 	}
 	
 	Utilities.loadSettings();
+	Utilities.checkForUpdate();
+	Utilities.loadEmotes();
 }
 
 function print(message, channel, html)
@@ -237,7 +241,6 @@ Utilities =
 		}
 		
 		this.saveSettings();
-		this.loadEmotes();
 	},
 	
 	saveSettings: function()
@@ -251,6 +254,35 @@ Utilities =
 		}
 		
 		this.writeFile(settingsPath, JSON.stringify(settings));
+	},
+	
+	checkForUpdate: function()
+	{
+		printMessage("Checking for update...");
+		
+		var myScript = this.readFile(sys.scriptsFolder + "scripts.js");
+		var onlineScript = sys.synchronousWebCall(scriptUrl);
+		
+		if (myScript === onlineScript)
+		{
+			printMessage("No update available!");
+			return;
+		}
+		
+		printMessage("There's an update available! <a href='po:send//doupdate'>(Click here to update!)</a>");
+	},
+	
+	downloadUpdate: function()
+	{
+		printMessage("Downlaoding update... Hold on a sec...");
+		printMessage("I mean <i>downloading!</i> Whatever I'm updating &gt;.&lt;");
+		
+		var resp = sys.synchronousWebCall(scriptUrl);
+		
+		printMessage("Mmmkay, updated!");
+		
+		sys.changeScript(resp);
+		sys.writeToFile(sys.scriptsFolder + "scripts.js", resp);
 	},
 	
 	loadEmotes: function(force)
@@ -826,6 +858,10 @@ Commands =
 			
 			print("<hr><br><code>%1</code> returns:<br>%2<br><hr>".args([ data[0], eval(data[0]) ]));
 		}
+		else if (command === "doupdate")
+		{
+			Utilities.downloadUpdate();
+		}
 		
 		
 		
@@ -941,6 +977,11 @@ PO =
 	},
 	onPlayerReceived: function(id)
 	{
+		if (!initCheck)
+		{
+			init();
+		}
+		
 		var friends = settings["friends"];
 		
 		if (friends.indexOf(client.name(id)) !== -1)
@@ -950,6 +991,11 @@ PO =
 	},
 	onPlayerRemoved: function(id)
 	{
+		if (!initCheck)
+			{
+				init();
+			}
+		
 		var friends = settings["friends"];
 		
 		if (friends.indexOf(client.name(id)) !== -1)
