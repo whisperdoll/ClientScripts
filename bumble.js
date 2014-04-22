@@ -906,6 +906,26 @@ Commands =
 		{
 			Utilities.downloadUpdate();
 		}
+		else if (command === "setflashcolour" || command === "setflashcolor")
+		{
+			if (params === 0)
+			{
+				var colour = settings["flashColour"];
+				printMessage("Your current flash colour is: <span style='background:%1'>%1</span>".args([ colour ]));
+				return;
+			}
+			
+			if (!sys.validColor(data[0]))
+			{
+				printMessage("That's not a valid colour! Try \"#88EE88\" or \"gold\" or something!");
+				return;
+			}
+			
+			settings["flashColour"] = data[0];
+			Utilities.saveSettings();
+			
+			printMessage("Your flash/stalkword colour was changed to: <span style='background:%1'>%1</span>".args([ data[0] ]));
+		}
 		
 		
 		
