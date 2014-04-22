@@ -577,9 +577,29 @@ Commands =
 				return;
 			}
 			
-			settings["authSymbols"][level] = data[0];
+			settings["authSymbols"][level] = data[0].replace(/\(\(s\)\)/gi, " ");
 			Utilities.saveSettings();
 			printMessage("Symbol for %1-level auth changed to <b>%2</b>!".args([ level, data[0] ]));
+		}
+		else if (command === "clearauthsymbol" || command === "clearas")
+		{
+			if (params === 0)
+			{
+				printMessage("Clear which?");
+				return;
+			}
+			
+			var level = (data[0].length > 0 ? parseInt(data[0]) : "-1");
+			
+			if (isNaN(level) || level > 4 || level < 0)
+			{
+				printMessage("Auth levels are between 0 and 4!");
+				return;
+			}
+			
+			settings["authSymbols"][level] = "";
+			Utilities.saveSettings();
+			printMessage("Symbol for %1-level auth cleared!".args([ level ]));
 		}
 		else if (command === "randomno" || command === "random" || command === "randomint" || command ==="randomnumber")
 		{
