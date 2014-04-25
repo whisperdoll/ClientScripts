@@ -65,10 +65,10 @@ var commands = [
 	"friends - Shows a list of your friends",
 	"addfriend [name] - Adds [name] to your friends",
 	"removefriend [name] - Removes [name] from your friends",
-	//"enrichedtext [on/off] - Enables or disables enriched text",
+	"enrichedtext [on/off] - Enables or disables enriched text",
 	//"setauthsymbol [symbol] - Changes symbol used to denote auth",
 	"setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
-	//"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
+	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	//"updateemotes - Downloads the emotes file",
 	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	//"setseparater [separater] - Sets the command parameter separater to [separater]",
@@ -641,20 +641,16 @@ Commands =
 				return;
 			}
 			
-			if (data[0].toLowerCase() === "on")
+			if (!cmp(data[0], "on") && !cmp(data[0], "off"))
 			{
-				settings["emotes"] = true;
-				Utilities.saveSettings();
-				printMessage(Utilities.parseEmotes("Emotes were enabled! :smiley:"));
+				printMessage("<a href='po:send//emotes on' %1>On</a> or <a href='po:send//emotes off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
 				return;
 			}
-			if (data[0].toLowerCase() === "off")
-			{
-				settings["emotes"] = false;
-				Utilities.saveSettings();
-				printMessage("Emotes were disabled! :)");
-				return;
-			}
+			
+			settings["emotes"] = cmp(data[0], "on");
+			Utilities.saveSettings();
+			
+			printMessage("Emotes were turned %1".args([ (cmp(data[0], "on") ? Utilities.parseEmotes("on! :smiley:") : "off! :)") ]));
 		}
 		else if (command === "addstalkword")
 		{
@@ -789,8 +785,8 @@ Commands =
 			print("<hr>");
 			
 			print(Utilities.centerText("%1 Here's info for %2:<br /><br /><img src='trainer:%3'></img><h3><i><font color='%4'>%2</font></i></h3><h4>" 
-				+ "ID:%5<br />"
-				+ "Auth Level:%6<br />"
+				+ "ID: %5<br />"
+				+ "Auth Level: %6<br />"
 				+ "Ignoring?: %7<br />"
 				+ "Colour: <font color='%4'><b>%4</b></font> / %8<br />" 
 				+ "Tiers: %9" + "<br />"
@@ -926,8 +922,34 @@ Commands =
 			
 			printMessage("Your flash/stalkword colour was changed to: <span style='background:%1'>%1</span>".args([ data[0] ]));
 		}
+		else if (command === "enrichedtext" || command === "etext")
+		{
+			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+			{
+				printMessage("<a href='po:send//enrichedtext on' %1>On</a> or <a href='po:send//enrichedtext off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				return;
+			}
+			
+			settings["enrichedText"] = cmp(data[0], "on");
+			Utilities.saveSettings();
+			printMessage("Enriched text was turned %1!".args([ data[0].toLowerCase() ]));
+		}
 		
 		
+		else if (command === "settings" || command === "mysettings")
+		{
+			print("<hr>");
+			printMessage("<b><u>Settings:</u></b>");
+			for (var setting in settings)
+			{
+				if (settings.hasOwnProperty(setting))
+				{
+                    var s = settings[setting];
+					printMessage("<b>%1:</b> %2".args([ setting, (s.toString() === "[object Object]" ? JSON.stringify(s).replace(/,/g, ", ").replace(/"/g, "") : s) ]));
+				}
+			}
+			print("<hr>");
+		}
 		
 		// redir
 		else
@@ -1032,10 +1054,23 @@ PO =
 			}
 				
 			var flash = msg !== _msg;
+			var ps = settings["paramSeparater"];
 			
-			print("%7<font color='%1'><a href='po:setmsg/%10' %11><timestamp /><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
-					.args([ colour, Utilities.parseEmotes(authSymbol), name, msg, (auth > 0 ? "<i>" : ""), (auth > 0 ? "<i>" : ""), (flash ? "<i>" : ""), (flash ? "</i>" : ""),
-						u, "<timestamp />" + u + ": " + m, "style='text-decoration:none; color:" + colour + ";'" ]), 
+			print("%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
+					.args
+					([ 
+						colour, // 1
+						Utilities.parseEmotes(authSymbol), // 2
+						name, // 3
+						msg, // 4
+						(auth > 0 ? "<i>" : ""), // 5
+						(auth > 0 ? "</i>" : ""), // 6
+						(flash ? "<i>" : ""), // 7
+						(flash ? "</i>" : ""), // 8
+						u, // 9
+						"<timestamp />" + u + ": " + m.replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"), // 10 (this is to avoid a message of "> breaking the tags!
+						"style='text-decoration:none; color:" + colour + ";'"  // 11
+					]), 	
 				channel, true); // this is cool!!
 		}
 	},
@@ -1056,9 +1091,9 @@ PO =
 	onPlayerRemoved: function(id)
 	{
 		if (!initCheck)
-			{
-				init();
-			}
+        {
+            init();
+        }
 		
 		var friends = settings["friends"];
 		
