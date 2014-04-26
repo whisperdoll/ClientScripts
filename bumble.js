@@ -423,10 +423,10 @@ Utilities =
 			return text;
 		}
 		
-		if (settings["fullwidth"])
-		{
+		//if (settings["fullwidth"])
+		//{
 			text = text.replace(/(^|\s)＊(.+)＊($|\s)/g, "$1*$2*$3").replace(/(^|\s)＿(.+)＿($|\s)/g, "$1_$2_$3").replace(/(^|\s)／(.+)／($|\s)/g, "$1/$2/$3");
-		}
+		//}
 		
 		var ret = text.replace(/(^|\s|\<u\>|\<b\>)\/(.+)\/($|\s|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
 			.replace(/(^|\s|\<i\>|\<b\>)_(.+)_($|\s|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
