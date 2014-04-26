@@ -90,7 +90,8 @@ var commands = [
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
-	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default"
+	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default",
+	"[general]tier [tier] - Gives information on [tier]"
 ];
 
 
