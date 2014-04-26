@@ -1424,7 +1424,7 @@ Commands =
 				return;
 			}
 			
-			printUserMessage(data[1], data[0], channel);
+			printUserMessage(data[1], client.name(id), channel);
 		}
 		
 		// redir
