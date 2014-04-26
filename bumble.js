@@ -50,33 +50,43 @@ var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
 
 var commands = [
-	"commandslist - Shows commands",
-	"lookup [name] - Displays information about [name]",
-	"pm [name] - Opens PM window with [name] selected",
-	"ranking [name] - Opens ranking window and selects [name]",
-	"changename [name] - Attempts to change your name to [name]",
-	"setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
-	"setbotname [name] - Changes my name to [name]",
-	"setbotcolour [colour] - Changes my colour to [colour]",
-	"eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
-	"emotes - Shows available emotes",
-	"emotes [on/off] - Enables/disables emotes",
-	"update - Checks for updates",
-	"stalkwords - Shows a list of your stalkwords",
-	"addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
-	"removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
-	"friends - Shows a list of your friends",
-	"addfriend [name] - Adds [name] to your friends",
-	"removefriend [name] - Removes [name] from your friends",
-	"enrichedtext [on/off] - Enables or disables enriched text",
-	//"setauthsymbol [symbol] - Changes symbol used to denote auth",
-	"setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
-	"setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
+	"[general]commandslist - Shows general commands",
+	"[general]commandslist social - Shows social-related commands",
+	"[general]commandslist settings - Shows settings-related commands",
+	"[general]commandslist all - Shows all commands",
+	"[general]lookup [name] - Displays information about [name]",
+	"[general]pm [name] - Opens PM window with [name] selected",
+	"[general]ranking [name] - Opens ranking window and selects [name]",
+	"[general]changename [name] - Attempts to change your name to [name]",
+	"[settings]setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
+	"[settings]setbotname [name] - Changes my name to [name]",
+	"[settings]setbotcolour [colour] - Changes my colour to [colour]",
+	"[general]eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
+	"[general]emotes - Shows available emotes",
+	"[general]emotes [on/off] - Enables/disables emotes",
+	"[general]update - Checks for updates",
+	"[social]stalkwords - Shows a list of your stalkwords",
+	"[social]addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
+	"[social]removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
+	"[social]friends - Shows a list of your friends",
+	"[social]addfriend [name] - Adds [name] to your friends",
+	"[social]removefriend [name] - Removes [name] from your friends",
+	"[social]addshortcut [shortcut]((sep))[text] - Makes it so [shortcut] is automatically replaced with [text] in messages you send",
+	"[social]removeshortcut [shortcut] - Removes [shortcut] from your shortcuts",
+	"[social]shortcuts - Shows a list of your shortcuts",
+	"[settings]enrichedtext [on/off] - Enables or disables enriched text",
+	"[settings]setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
+	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
+	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	//"updateemotes - Downloads the emotes file",
 	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	//"setseparater [separater] - Sets the command parameter separater to [separater]",
-	"randomno [min];[max] - Gives a random number between [min] and [max]",
-	"usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]"
+	"[general]randomno [min];[max] - Gives a random number between [min] and [max]",
+	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
+	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
+	"[settings]settings - Shows list of script settings",
+	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
+	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default"
 ];
 
 
@@ -205,15 +215,23 @@ String.prototype.indexOf = function (str)
 
 String.prototype.parseCmdDesc = function ()
 {
-	var cmd = "<b>" + this.split(" ")[0] + "</b>";
-	var params = this.substr(this.split(" ")[0].length).split(" - ")[0];
-	var desc = this.substr(this.indexOf(" - "));
+	var str = this;
+	
+	var type = str.substr(0, str.indexOf("]") + 1);
+	
+	str = str.substr(type.length);
+	
+	type = type.substr(1, type.length - 2);
+	
+	var cmd = "<b>" + str.split(" ")[0] + "</b>";
+	var params = str.substr(str.split(" ")[0].length).split(" - ")[0];
+	var desc = str.substr(str.indexOf(" - "));
 	var sep = settings["paramSeparater"];
 
 	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 
-	var ret = "<a href='po:setmsg//" + this.substr(1, this.indexOf(" - ")) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
+	var ret = "<a href='po:setmsg//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
 
 	return ret;
 };
@@ -498,6 +516,23 @@ Utilities =
 		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1).toLowerCase() : "");
 	},
 	
+	printCommands: function(type)
+	{
+		print("<hr>");
+
+		printMessage("<u><b>%1 Commands:</b></u>".args([ this.capitalize(type) ]));
+		
+		var cs = settings["commandSymbol"];
+
+		for (var i = 0; i < commands.length; i++)
+		{
+			if (cmp(type, "all") || cmp(type, commands[i].substr(1, commands[i].indexOf("]") - 1)))
+				printMessage((cs + commands[i]).parseCmdDesc());
+		}
+
+		print("<hr>");
+	},
+	
 	randomInt: function(arg1, arg2)
 	{
 		if (arg2 !== undefined) // randomInt(min, max)
@@ -534,18 +569,18 @@ Commands =
 		
 		if (command === "commandslist")
 		{
-			print("<hr><br>");
-
-			printMessage("<u><b>Commands:</b></u>");
-			
-			var cs = settings["commandSymbol"];
-
-			for (var i = 0; i < commands.length; i++)
+			if (params === 0)
 			{
-				printMessage((cs + commands[i]).parseCmdDesc());
+				Utilities.printCommands("general");
+				return;
 			}
-
-			print("<br><hr>");
+			
+			if (!cmp(data[0], "social") && !cmp(data[0], "settings"))
+			{
+			
+			}
+			
+			Utilities.printCommands(data[0].toLowerCase());
 		}
 		else if (command === "setcs" || command === "setcommandsymbol")
 		{
@@ -888,14 +923,40 @@ Commands =
 					var poke = line.substr(ind + 6);
 					poke = poke.substr(0, poke.indexOf("</a>"));
 					
+					var percent = line.substr(ind + 12 + poke.length);
+					percent = percent.substr(0, percent.indexOf(")"));
+					percent = "<small>%1</small>".args([ percent ]);
+					
 					var _poke = "<a href='%1' style='text-decoration:none'>%2</a>".args([ url + sys.pokeNum(poke) + ".html", poke]);
 					
-					pokes.push("#%1 - %2 %3".args([ (pokes.length + 1), "<img src='" + emotes["icon" + (sys.pokeNum(poke) > 900 ? "0" : sys.pokeNum(poke))] + "'>", _poke ]));
+					pokes.push("#%1 - %2 %3 %4".args
+					([
+						(pokes.length + 1), 
+						"<img src='" + emotes["icon" + (sys.pokeNum(poke) > 900 ? "0" : sys.pokeNum(poke))] + "'>",
+						_poke,
+						percent
+					]));
+						
 					//print(html[i]);
 				}
 			}
 			
-			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], pokes.join("<br>") ]));
+			var tc = "";
+			var cols = 4;
+					
+			for (var i = 0; i < pokes.length; i++)
+			{
+				if (i % cols === 0)
+				{
+					tc += (i > 0 ? "</tr><tr>" : "<tr>");
+				}
+				
+				tc += "<td>" + pokes[i] + "</td>";
+			}
+			
+			var table = "<table width='100%'>" + tc + "</table>";
+			
+			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], table ]));
 		}
 		else if (command === "pm")
 		{
@@ -1076,6 +1137,31 @@ Commands =
 				}
 			}
 			print("<hr>");
+		}
+		else if (command === "setsetting")
+		{
+			if (params < 2)
+			{
+				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				return;
+			}
+			
+			settings[data[0]] = data[1];
+			Utilities.saveSettings();
+			printMessage("%1's value was set to: <b>%2</b>".args([ data[0], data[1] ]));
+		}
+		else if (command === "clearsetting" || command === "deletesetting")
+		{
+			if (params === 0)
+			{
+				printMessage("Clear which setting?");
+				return;
+			}
+			
+			delete settings[data[0]];
+			Utilities.saveSettings();
+			
+			printMessage("%1's value was cleared!".args([ data[0] ]));
 		}
 		
 		// redir
