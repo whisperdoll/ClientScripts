@@ -14,6 +14,7 @@ var emotesCheck = false;
 
 var settings = {};
 var emotes = {};
+var tiers = {};
 
 var emoteString = "";
 var emoteList = [];
@@ -47,6 +48,7 @@ var defaults =
 
 var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
+var tiersPath = "tiers.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
@@ -120,6 +122,7 @@ function init()
 	}
 	
 	Utilities.loadSettings();
+	Utilities.loadTiers();
 	Utilities.checkForUpdate();
 	Utilities.loadEmotes();
 }
@@ -236,6 +239,16 @@ String.prototype.parseCmdDesc = function ()
 	var ret = "<a href='po:setmsg//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
 
 	return ret;
+};
+
+String.prototype.startsWith = function(text)
+{
+	var str = this;
+	
+	if (text.length > str.length)
+		return false;
+		
+	return str.substr(0, text.length) === text;
 };
 
 
@@ -526,6 +539,110 @@ Utilities =
 	capitalize: function(str)
 	{
 		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1).toLowerCase() : "");
+	},
+	
+	loadTiers: function()
+	{
+		if (!sys.fileExists(tiersPath))
+		{
+			this.getTiers();
+		}
+		
+		var json = this.readFile(tiersPath);
+		
+		if (json === "")
+		{
+			printMessage("Couldn't load tiers!");
+			return;
+		}
+		
+		tiers = JSON.parse(json);
+	},
+	
+	getTiers: function()
+	{
+		var url = "https://raw.githubusercontent.com/po-devs/po-server-goodies/master/tiers.xml";
+		
+		var json = {};
+		
+		printMessage("Fetching tiers...");
+		var xml = sys.synchronousWebCall(url);
+		
+		// is there any convenient way to parse xml?
+		
+		if (xml === "")
+		{
+			printMessage("Couldn't fetch tiers!");
+			return;
+		}
+		
+		xml = xml.split("\n");
+		
+		// xml is an array now //
+		
+		for (var i = 0; i < xml.length; i++)
+		{
+			var line = xml[i];
+			var indent = line.indexOf("<");
+			
+			line = line.substr(indent); // removes leading space
+			
+			if (line.startsWith("<tier ")) // tier
+			{
+				var info = this.parseXML(line);
+				var name = info.name;
+				
+				for (var key in info)
+				{
+					if (info.hasOwnProperty(key))
+					{
+						if (!json.hasOwnProperty(name))
+						{
+							json[name] = {};
+						}
+						
+						json[name][key] = info[key];
+					}
+				}
+			}
+		}
+		
+		tiers = json;
+		this.writeFile(tiersPath, JSON.stringify(json));
+	},
+	
+	parseXML: function(xml)
+	{
+		var json = {};
+		
+		if (xml.startsWith("</") || xml === "")
+			return json;
+		
+		// <category name="VGC" displayOrder="-4">
+		
+		xml = xml.trim();
+		xml = xml.substr(xml.indexOf(" ") + 1);
+		
+		// now we can get individual vars by splitting spaces
+		
+		var xmlvars = xml.split("\" ");
+		
+		for (var i = 0; i < xmlvars.length; i++)
+		{
+			var key = xmlvars[i].split("=")[0];
+			var val = xmlvars[i].split("=")[1];
+			
+			val = (val === "\"" ? "" : val.substr(1)); // trims quote and detects empty var
+			
+			if (val.indexOf("\"") !== -1) // end of line, so there's prob no space
+			{
+				val = val.substr(0, val.indexOf("\""));
+			}
+			
+			json[key] = val;
+		}
+		
+		return json;
 	},
 	
 	printCommands: function(type)
@@ -879,6 +996,13 @@ Commands =
 
 			var avatar = client.player(id).avatar;
 			var htr = Utilities.hexToRgb(client.color(id));
+			
+			var _tiers = client.tiers(id);
+			
+			for (var i = 0; i < _tiers.length; i++)
+			{
+				_tiers[i] = "<a href='po:send//tier %1'>%1</a>".args([ _tiers[i] ]);
+			}
 
 			print("<hr>");
 			
@@ -891,7 +1015,7 @@ Commands =
 				+ "Actions: <a href='po:pm/%5'>PM</a>, <a href='po:info/%5'>Challenge</a>%10"
 					+ ", <a href='po:ignore/%5'>Toggle Ignore</a>"
 				+ "</h4>")
-				.args([ botHTML(), user, avatar, client.color(id), id, client.auth(id), (client.isIgnored(id) ? "Yes" : "No"), htr, client.tiers(id).join(", "),
+				.args([ botHTML(), user, avatar, client.color(id), id, client.auth(id), (client.isIgnored(id) ? "Yes" : "No"), htr, _tiers.join(", "),
 					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "")]));
 				
 			print("<hr>");
@@ -1200,6 +1324,36 @@ Commands =
 			Utilities.saveSettings();
 			
 			printMessage("%1's value was cleared!".args([ data[0] ]));
+		}
+		else if (command === "tier")
+		{
+			var tierList = client.getTierList();
+			
+			if (params === 0 || tierList.indexOf(data[0]) === -1)
+			{
+				printMessage("Which tier? Valid tiers are: " + tierList.join(", ")); // TODO: make these clickable
+				return;
+			}
+			
+			var tier = tierList[tierList.indexOf(data[0])]; // correct case
+			var t = tiers[tier];
+			
+			var b = (t.banMode === "ban" ? "Banned" : "Eligable");
+			
+			var info = 
+			[
+				"<b>%1 Pok&eacute;mon:</b> %2".args([ b, t.pokemons ]),
+				"<b>%1 Moves:</b> %2".args([ b, t.moves ]),
+				"<b>Mode:</b> " + [ "Singles", "Doubles", "Triples" ][t.mode],
+				"<b>Clauses:</b> " + (t.hasOwnProperty("clauses") ? t.clauses.replace(/,/g, ", ") : "--"),
+				"<b>Max Level:</b> " + t.maxLevel,
+				"<b>Number of Pok&eacute;mon:</b> " + t.numberOfPokemons
+			];
+			
+			print("<hr>");
+			print("<a href='po:send//usage %1' style='text-decoration:none'><h1>%1</h1</a>".args([ t.name ]));
+			print(info.join("<br>"));
+			print("<hr>");
 		}
 		
 		// redir
