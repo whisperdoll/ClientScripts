@@ -438,29 +438,6 @@ Utilities =
 		return ret;
 	},
 	
-	parseEmotes: function(text, force)
-	{
-		if (!settings["emotes"] && !force)
-		{
-			return text;
-		}
-		
-		var ret = text;
-		
-		return ret.replace(/:([a-z0-9\+\-_]+):/g, function(emote)
-		{
-			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
-			
-			if (emotes.hasOwnProperty(_emote))
-			{
-				var data = emotes[_emote];
-				return "<img src='%1'>".args([ data ]);
-			}
-			
-			return ":" + _emote + ":";
-		});
-	},
-	
 	fullwidth: function(text)
 	{
 		if (!settings["fullwidth"])
@@ -476,6 +453,48 @@ Utilities =
 		}
 		
 		return ret;
+	},
+	
+	unfullwidth: function(text)
+	{
+		var ret = text;
+		var fw = "﻿　｀１２３４５６７８９０－＝～！＠＃＄％＾＆＊（）＿＋ｑｗｅｒｔｙｕｉｏｐ［］＼ＱＷＥＲＴＹＵＩＯＰ｛｝｜ａｓｄｆｇｈｊｋｌ；＇ＡＳＤＦＧＨＪＫＬ：＂ｚｘｃｖｂｎｍ，．／ＺＸＣＶＢＮＭ＜＞？";
+		var nw = " `1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?";
+		
+		for (var i = 0; i < fw.length; i++)
+		{
+			ret = ret.replace(new RegExp(fw[i], "g"), nw[i]);
+		}
+		
+		return ret;
+	},
+	
+	parseEmotes: function(text, force)
+	{
+		if (!settings["emotes"] && !force)
+		{
+			return text;
+		}
+		
+		var ret = text;
+		
+		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿]+)：/g, function(match)
+		{
+			return Utilities.unfullwidth(match);
+		});
+		
+		return ret.replace(/\:([a-z0-9\+\-_]+)\:/g, function(emote)
+		{
+			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
+			
+			if (emotes.hasOwnProperty(_emote))
+			{
+				var data = emotes[_emote];
+				return "<img src='%1'>".args([ data ]);
+			}
+			
+			return ":" + _emote + ":";
+		});
 	},
 	
 	shortcuts: function(text)
