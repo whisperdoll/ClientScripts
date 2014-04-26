@@ -1069,7 +1069,7 @@ Commands =
 					pokes.push("#%1 - %2 %3 %4".args
 					([
 						(pokes.length + 1), 
-						Utilities.parseEmotes(":" + poke.toLowerCase() + ":", true),
+						"<img src='" + emotes[poke.toLowerCase()] + "'>",
 						_poke,
 						percent
 					]));
