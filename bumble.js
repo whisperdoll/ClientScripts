@@ -16,6 +16,7 @@ var settings = {};
 var emotes = {};
 
 var emoteString = "";
+var emoteList = [];
 
 var fetchedScript = "";
 
@@ -40,7 +41,8 @@ var defaults =
 	"stalkwords": [],
 	"friends": [],
 	"fullwidth": false,
-	"shortcuts": {}
+	"shortcuts": {},
+	"ignoreChallenges": false
 };
 
 var settingsPath = "bumble.json";
@@ -348,7 +350,9 @@ Utilities =
 		{
 			if (emotes.hasOwnProperty(x))
 			{
-				emoteString += "<a href='po:appendmsg/:%1:'>%2</a> ".args([ x, this.parseEmotes(":" + x + ":")]);
+				var emote = "<a href='po:appendmsg/:%1:'>%2</a> ".args([ x, this.parseEmotes(":" + x + ":") ]);
+				emoteString += emote;
+				emoteList.push(emote);
 			}
 		}
 	},
@@ -976,7 +980,7 @@ Commands =
 			
 			var id = client.id(data[0]);
 			
-			if (id === 0)
+			if (id === -1)
 			{
 				printMessage("You can't PM that person!");
 				return;
@@ -1012,7 +1016,13 @@ Commands =
 				return;
 			}
 			
-			print("<hr><br><code>%1</code> returns:<br>%2<br><hr>".args([ data[0], eval(data[0]) ]));
+			var ret = eval(data[0]);
+			
+			if (ret !== undefined)
+			{
+				printMessage("<code><font color='blue'>%1</code></font> returns <code><font color='blue'>%2</font></code>"
+					.args([ Utilities.escapeHTML(data[0]), Utilities.escapeHTML(ret.toString()) ]));
+			}
 		}
 		else if (command === "update")
 		{
@@ -1065,6 +1075,26 @@ Commands =
 			settings["fullwidth"] = cmp(data[0], "on");
 			Utilities.saveSettings();
 			printMessage("Fullwidth text was turned %1!".args([ data[0].toLowerCase() ]));
+		}
+		else if (command === "ignorechallenges" || command === "ignorechals")
+		{
+			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+			{
+				printMessage("<a href='po:send//ignorechallenges on' %1>On</a> or <a href='po:send//ignorechallenges off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				return;
+			}
+			
+			settings["ignoreChallenges"] = cmp(data[0], "on");
+			Utilities.saveSettings();
+			
+			if (cmp(data[0], "on"))
+			{
+				printMessage("Challenges will now be ignored!");
+			}
+			else
+			{
+				printMessage("Challenges will no longer be ignored!");
+			}
 		}
 		else if (command === "addshortcut")
 		{
@@ -1336,6 +1366,14 @@ PO =
 		if (friends.indexOf(client.name(id)) !== -1)
 		{
 			printMessage("%1 went <b><font color='red'>offline!</font></b><ping />".args([ client.name(id) ]));
+		}
+	},
+	beforeChallengeReceived: function(challengeId, opponentId, tier, clauses)
+	{
+		if (settings["ignoreChallenges"])
+		{
+			sys.stopEvent();
+			// possibly alert, maybe not bc still spam
 		}
 	}
 });
