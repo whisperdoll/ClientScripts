@@ -39,7 +39,7 @@ var defaults =
 	"flashColour": "gold",
 	"stalkwords": [],
 	"friends": [],
-	"fullwidth": true,
+	"fullwidth": false,
 	"shortcuts": {}
 };
 
