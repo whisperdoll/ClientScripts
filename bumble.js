@@ -512,23 +512,7 @@ Utilities =
 		{
 			if (keys.hasOwnProperty(key))
 			{
-				ret = ret.replace(new RegExp(this.escapeRegex(key), "g"), keys[key]);
-			}
-		}
-		
-		return ret;
-	},
-		
-	shortcuts: function(text)
-	{
-		var ret = text;
-		var sc = settings["shortcuts"];
-		
-		for (var s in sc)
-		{
-			if (sc.hasOwnProperty(s))
-			{
-				ret = ret.replace(new RegExp(this.escapeRegex(s), "g"), sc[s]);
+				ret = ret.replace(new RegExp("(^|\\s)" + this.escapeRegex(key) + "($|\\s)", "g"), "$1" + keys[key] + "$2");
 			}
 		}
 		
