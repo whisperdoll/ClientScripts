@@ -501,12 +501,12 @@ Utilities =
 		
 		var ret = text;
 		
-		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿]+)：/g, function(match)
+		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？]+)：/g, function(match)
 		{
 			return Utilities.unfullwidth(match);
 		});
 		
-		return ret.replace(/\:([a-z0-9\+\-_]+)\:/g, function(emote)
+		return ret.replace(/\:([a-z0-9\+\-_\.'\!\?]+)\:/g, function(emote)
 		{
 			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
 			
@@ -1355,6 +1355,10 @@ Commands =
 			print("<a href='po:send//usage %1' style='text-decoration:none'><h1>%1</h1</a>".args([ t.name ]));
 			print(info.join("<br>"));
 			print("<hr>");
+		}
+		else if (command === "updateemotes")
+		{
+			Utilities.loadEmotes(true);
 		}
 		
 		// redir
