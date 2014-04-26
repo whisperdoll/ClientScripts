@@ -148,6 +148,54 @@ function printMessage(message, channel)
 	print(botHTML() + " " + message, channel, true);
 }
 
+function printUserMessage(m, u, channel)
+{
+	var id = client.id(u);
+			
+	var colour = client.color(id);
+	var auth = client.auth(id);
+	var authSymbol = settings["authSymbols"][auth];
+	
+	var name = Utilities.escapeHTML(u);
+	var msg = m;
+	
+	msg = Utilities.escapeHTML(msg);
+	msg = Utilities.fixLinks(msg);
+	msg = Utilities.enrich(msg);
+	msg = Utilities.parseEmotes(msg);
+	
+	var _msg = msg;
+	
+	var stalkwords = settings["stalkwords"].slice(0);
+	stalkwords.push(client.ownName());
+	
+	for (var i = 0; i < stalkwords.length; i++)
+	{
+		msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s)", "gi"), 
+			"$1<span style='background:%1'>$2</span><ping />$3".args([ settings["flashColour"] ]));
+	}
+		
+	var flash = msg !== _msg;
+	var ps = settings["paramSeparater"];
+	
+	print("%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
+			.args
+			([ 
+				colour, // 1
+				Utilities.parseEmotes(authSymbol), // 2
+				name, // 3
+				msg, // 4
+				(auth > 0 ? "<i>" : ""), // 5
+				(auth > 0 ? "</i>" : ""), // 6
+				(flash ? "<i>" : ""), // 7
+				(flash ? "</i>" : ""), // 8
+				u, // 9
+				"<timestamp />" + u + ": " + m.replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"), // 10 (this is to avoid a message of "> breaking the tags!
+				"style='text-decoration:none; color:" + colour + ";'"  // 11
+			]), 	
+		channel, true); // this is cool!!
+}
+
 function say(message, channel)
 {
 	if (channel === undefined)
@@ -1360,6 +1408,24 @@ Commands =
 		{
 			Utilities.loadEmotes(true);
 		}
+		else if (command === "fakelog")
+		{
+			if (params < 2)
+			{
+				printMessage("It's %1fakelog name%2message".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				return;
+			}
+			
+			var id = client.id(data[0]);
+			
+			if (id === -1)
+			{
+				printMessage("I can't fake a log from that user! (Maybe they're offline?)");
+				return;
+			}
+			
+			printUserMessage(data[1], data[0], channel);
+		}
 		
 		// redir
 		else
@@ -1453,50 +1519,7 @@ PO =
 		if (Utilities.isPlayerOnline(u))
 		{
 			sys.stopEvent();
-			var id = client.id(u);
-			
-			var colour = client.color(id);
-			var auth = client.auth(id);
-			var authSymbol = settings["authSymbols"][auth];
-			
-			var name = Utilities.escapeHTML(u);
-			var msg = m;
-			
-			msg = Utilities.escapeHTML(msg);
-			msg = Utilities.fixLinks(msg);
-			msg = Utilities.enrich(msg);
-			msg = Utilities.parseEmotes(msg);
-			
-			var _msg = msg;
-			
-			var stalkwords = settings["stalkwords"].slice(0);
-			stalkwords.push(client.ownName());
-			
-			for (var i = 0; i < stalkwords.length; i++)
-			{
-				msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s)", "gi"), 
-					"$1<span style='background:%1'>$2</span><ping />$3".args([ settings["flashColour"] ]));
-			}
-				
-			var flash = msg !== _msg;
-			var ps = settings["paramSeparater"];
-			
-			print("%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
-					.args
-					([ 
-						colour, // 1
-						Utilities.parseEmotes(authSymbol), // 2
-						name, // 3
-						msg, // 4
-						(auth > 0 ? "<i>" : ""), // 5
-						(auth > 0 ? "</i>" : ""), // 6
-						(flash ? "<i>" : ""), // 7
-						(flash ? "</i>" : ""), // 8
-						u, // 9
-						"<timestamp />" + u + ": " + m.replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"), // 10 (this is to avoid a message of "> breaking the tags!
-						"style='text-decoration:none; color:" + colour + ";'"  // 11
-					]), 	
-				channel, true); // this is cool!!
+			printUserMessage(m, u, channel);
 		}
 	},
 	onPlayerReceived: function(id)
