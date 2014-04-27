@@ -23,6 +23,8 @@ var customCommands = {};
 
 var fetchedScript = "";
 
+var commandTypes = ["general", "social", "settings", "custom", "all"];
+
 var defaults =
 {
 	"botColour": "green",
@@ -83,11 +85,12 @@ var commands = [
 	"[settings]setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
 	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
 	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
-	//"updateemotes - Downloads the emotes file",
-	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
-	//"setseparater [separater] - Sets the command parameter separater to [separater]",
+	"[general]updateemotes - Downloads the emotes file",
+	"[general]ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
+	"[settings]setseparater [separater] - Sets the command parameter separater to [separater]",
 	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
 	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
+	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
@@ -756,11 +759,56 @@ Utilities =
 		printMessage("<u><b>%1 Commands:</b></u>".args([ this.capitalize(type) ]));
 		
 		var cs = settings["commandSymbol"];
+		
+		if (cmp(type, "all"))
+		{
+			// let's make this look better
+			
+			for (var type = 0; type < commandTypes.length; type++)
+			{
+				if (cmp(commandTypes[type], "all"))
+				{
+					continue;
+				}
+				
+				printMessage("<b><u>%1 Commands:</u></b>".args([ Utilities.capitalize(commandTypes[type]) ]));
+				
+				var none = true;
+				
+				for (var i = 0; i < commands.length; i++)
+				{
+					if (cmp(commandTypes[type], commands[i].substr(1, commands[i].indexOf("]") - 1)))
+					{
+						printMessage((cs + commands[i]).parseCmdDesc());
+						none = false;
+					}
+				}
+				
+				if (none)
+				{
+					printMessage("(None)");
+				}
+			}
+			
+			print("<hr>");
+			
+			return;
+		}
 
+		var none = true;
+		
 		for (var i = 0; i < commands.length; i++)
 		{
-			if (cmp(type, "all") || cmp(type, commands[i].substr(1, commands[i].indexOf("]") - 1)))
+			if (cmp(type, commands[i].substr(1, commands[i].indexOf("]") - 1)))
+			{
 				printMessage((cs + commands[i]).parseCmdDesc());
+				none = false;
+			}
+		}
+		
+		if (none)
+		{
+			printMessage("(None)");
 		}
 
 		print("<hr>");
@@ -833,7 +881,7 @@ Commands =
 				return;
 			}
 			
-			if (["social", "general", "settings", "all", "custom"].indexOf(data[0]) === -1)
+			if (commandTypes.indexOf(data[0]) === -1)
 			{
 				printMessage("That's not a type of command!");
 				return;
@@ -1160,6 +1208,8 @@ Commands =
 				return;
 			}
 			
+			var amt = (params >= 2 && !isNaN(data[1]) ? data[1] : 100);
+			
 			var url = "http://stats.pokemon-online.eu/%1/".args([ tierList[tierList.indexOf(data[0])].replace(/ /g, "%20") ]);
 			
 			printMessage("Fetching usage stats...");
@@ -1182,7 +1232,7 @@ Commands =
 			{
 				var line = html[i].trim();
 				
-				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>" && pokes.length < 100)
+				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>" && pokes.length < amt)
 				{
 					var ind = line.indexOf("html'>");
 					
@@ -1527,7 +1577,7 @@ Commands =
 			
 			Utilities.saveSettings();
 		}
-		else if (command === "setparamseparater")
+		else if (command === "setparamseparater" || command === "setseparater")
 		{
 			if (params === 0)
 			{
