@@ -19,6 +19,8 @@ var tiers = {};
 var emoteString = "";
 var emoteList = [];
 
+var customCommands = {};
+
 var fetchedScript = "";
 
 var defaults =
@@ -49,6 +51,7 @@ var defaults =
 var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
 var tiersPath = "tiers.json";
+var commandsPath = "customCommands.json";
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
@@ -122,6 +125,7 @@ function init()
 		print(Utilities.centerText("<hr><h1>Hi!</hr><h3>Type <b><a href='po:send//commandslist' style='text-decoration:none;'>~commandslist</a></b> to get started!</h3><br />" + celebiPic + "<hr>"));
 	}
 	
+	Utilities.loadCommands();
 	Utilities.loadSettings();
 	Utilities.loadTiers();
 	Utilities.checkForUpdate();
@@ -341,6 +345,56 @@ Utilities =
 		}
 		
 		this.writeFile(settingsPath, JSON.stringify(settings));
+		
+		this.saveCommands();
+	},
+	
+	loadCommands: function()
+	{
+		customCommands = {};
+		
+		this.appendFile(commandsPath, "");
+		
+		if (this.readFile(commandsPath) === "")
+			this.writeFile(commandsPath, JSON.stringify(customCommands));
+		
+		customCommands = JSON.parse(this.readFile(commandsPath));
+		
+		for (var cmd in customCommands)
+		{
+			if (customCommands.hasOwnProperty(cmd))
+			{
+				eval(cmd + "=" + customCommands[cmd]);
+				
+				// we need to parse these to put in commands ok //
+				
+				// name [param1] [param2] - desc //
+				
+				var name = cmd.substr("custom_".length);
+				
+				var params = customCommands[cmd];
+				params = params.substr(params.indexOf("(") + 1).replace(/ /g, "");
+				params = params.substr(0, params.indexOf(")"));
+				params = (params.indexOf(",") === -1 ? [params] : params.split(","));
+				
+				// params is array now //
+				
+				for (var i = 0; i < params.length; i++)
+				{
+					params[i] = "[" + params[i] + "]";
+				}
+				
+				var disp = "[custom]" + name + " " + params.join(" ") + " - Custom command";
+				
+				if (commands.indexOf(disp) === -1)
+					commands.push(disp);
+			}
+		}
+	},
+	
+	saveCommands: function()
+	{
+		this.writeFile(commandsPath, JSON.stringify(customCommands));
 	},
 	
 	checkForUpdate: function()
@@ -745,6 +799,31 @@ Commands =
 	{
 		var params = (data === undefined ? 0 : data.length);
 		
+		for (var cmd in customCommands)
+		{
+			if (customCommands.hasOwnProperty(cmd) && cmp("custom_" + command, cmd))
+			{
+				var cmdParams = (params > 0 ? data : "");
+				
+				if (params > 0)
+				{
+					for (var i = 0; i < cmdParams.length; i++)
+					{
+						if (isNaN(cmdParams[i]) && (!cmdParams[i].startsWith("\"") && !cmdParams[i].substr(cmdParams[i].length - 1, 1) !== "\""))
+							cmdParams[i] = "\"" + cmdParams[i] + "\"";
+					}
+					
+					cmdParams = cmdParams.join(",");
+				}
+				
+				eval(cmd + "(" + cmdParams + ")");
+				
+				return;
+			}
+		}
+		
+		
+		
 		if (command === "commandslist")
 		{
 			if (params === 0)
@@ -753,9 +832,10 @@ Commands =
 				return;
 			}
 			
-			if (!cmp(data[0], "social") && !cmp(data[0], "settings"))
+			if (["social", "general", "settings", "all", "custom"].indexOf(data[0]) === -1)
 			{
-			
+				printMessage("That's not a type of command!");
+				return;
 			}
 			
 			Utilities.printCommands(data[0].toLowerCase());
@@ -1426,6 +1506,31 @@ Commands =
 			
 			printUserMessage(data[1], client.name(id), channel);
 		}
+		else if (command === "makecommand")
+		{
+			if (params < 2)
+			{
+				printMessage("It's %1makecommand name%2function".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				return;
+			}
+			
+			customCommands["custom_" + data[0]] = data[1];
+			
+			var ret = eval("custom_" + data[0] + "=" + data[1]); // we do custom_ prefix to make sure none of our vars are overwritten
+			
+			if (ret !== undefined)
+			{
+				printMessage("<code><font color='blue'>%1</code></font> returns <code><font color='blue'>%2 - Command successfully created!</font></code>"
+					.args([ Utilities.escapeHTML(data[0]), Utilities.escapeHTML(ret.toString()) ]));
+			}
+			
+			Utilities.saveSettings();
+		}
+		
+		
+		
+		
+		
 		
 		// redir
 		else
