@@ -88,13 +88,15 @@ var commands = [
 	//"updateemotes - Downloads the emotes file",
 	//"ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	//"setseparater [separater] - Sets the command parameter separater to [separater]",
-	"[general]randomno [min];[max] - Gives a random number between [min] and [max]",
+	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
 	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
 	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default",
-	"[general]tier [tier] - Gives information on [tier]"
+	"[general]tier [tier] - Gives information on [tier]",
+	"[general]makecommand [name]((sep))[function] - Makes command [name]. See <a href='http://pokemon-online.eu/threads/bumble-songsings-new-client-scripts.26952/#post-377156'>this</a>",
+	"[general]setparamseparater [sep] - Sets your command parameter separater to [sep]"
 ];
 
 
