@@ -1526,6 +1526,18 @@ Commands =
 			
 			Utilities.saveSettings();
 		}
+		else if (command === "setparamseparater")
+		{
+			if (params === 0)
+			{
+				printMessage("Set it to what?");
+			}
+			
+			settings["paramSeparater"] = data[0];
+			Utilities.saveSettings();
+			
+			printMessage("Your command parameter separater has been changed to: <b>%1</b>".args([ data[0] ]));
+		}
 		
 		
 		
