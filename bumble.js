@@ -58,9 +58,7 @@ var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master
 
 var commands = [
 	"[general]commandslist - Shows general commands",
-	"[general]commandslist social - Shows social-related commands",
-	"[general]commandslist settings - Shows settings-related commands",
-	"[general]commandslist all - Shows all commands",
+	"[general]commandslist [type] - Shows commands related to [type]. [type] can be: general, social, settings, custom, or all",
 	"[general]lookup [name] - Displays information about [name]",
 	"[general]pm [name] - Opens PM window with [name] selected",
 	"[general]ranking [name] - Opens ranking window and selects [name]",
@@ -177,7 +175,7 @@ function printUserMessage(m, u, channel)
 	
 	for (var i = 0; i < stalkwords.length; i++)
 	{
-		msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s)", "gi"), 
+		msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s|\\!|\\?|\\.|\"|,)", "gi"), 
 			"$1<span style='background:%1'>$2</span><ping />$3".args([ settings["flashColour"] ]));
 	}
 		
@@ -386,7 +384,8 @@ Utilities =
 					params[i] = "[" + params[i] + "]";
 				}
 				
-				var disp = "[custom]" + name + " " + params.join(" ") + " - Custom command";
+				var disp = "[custom]" + name + " " + params.join("((sep))")
+					+ " - Custom command <a href=\"po:setmsg/%1\">(View function)</a>".args([ customCommands[cmd].replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F") ]);
 				
 				if (commands.indexOf(disp) === -1)
 					commands.push(disp);
