@@ -1,4 +1,4 @@
-// Bumble //
+// Bumble // http://puu.sh/87TqH.png
 
 
 
@@ -61,43 +61,43 @@ var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master
 var commands = [
 	"[general]commandslist - Shows general commands",
 	"[general]commandslist [type] - Shows commands related to [type]. [type] can be: general, social, settings, custom, or all",
+	"[general]update - Checks for updates",
+	"[general]updateemotes - Downloads the emotes file",
+	"[general]updatetiers - Parses and downloads PO's current tiers for use with the ((cs))tiers command",
 	"[general]lookup [name] - Displays information about [name]",
 	"[general]pm [name] - Opens PM window with [name] selected",
 	"[general]ranking [name] - Opens ranking window and selects [name]",
 	"[general]changename [name] - Attempts to change your name to [name]",
-	"[settings]setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
-	"[settings]setbotname [name] - Changes my name to [name]",
-	"[settings]setbotcolour [colour] - Changes my colour to [colour]",
 	"[general]eval [string] - Runs [string] through a JavaScript evaluator. Can be used for math and things!",
 	"[general]emotes - Shows available emotes",
 	"[general]emotes [on/off] - Enables/disables emotes",
-	"[general]update - Checks for updates",
+	"[general]ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
+	"[general]tier [tier] - Gives information on [tier]",
+	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
+	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
+	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
+	"[general]makecommand [name]((sep))[function] - Makes command [name]. See <a href='http://pokemon-online.eu/threads/bumble-songsings-new-client-scripts.26952/#post-377156'>this</a>",
 	"[social]stalkwords - Shows a list of your stalkwords",
 	"[social]addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
 	"[social]removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
 	"[social]friends - Shows a list of your friends",
 	"[social]addfriend [name] - Adds [name] to your friends",
 	"[social]removefriend [name] - Removes [name] from your friends",
+	"[social]shortcuts - Shows a list of your shortcuts",
 	"[social]addshortcut [shortcut]((sep))[text] - Makes it so [shortcut] is automatically replaced with [text] in messages you send",
 	"[social]removeshortcut [shortcut] - Removes [shortcut] from your shortcuts",
-	"[social]shortcuts - Shows a list of your shortcuts",
+	"[settings]setcommandsymbol [symbol] - Changes your command symbol to [symbol]",
+	"[settings]setbotname [name] - Changes my name to [name]",
+	"[settings]setbotcolour [colour] - Changes my colour to [colour]",
 	"[settings]enrichedtext [on/off] - Enables or disables enriched text",
 	"[settings]setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
 	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
 	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
-	"[general]updateemotes - Downloads the emotes file",
-	"[general]ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	"[settings]setseparater [separater] - Sets the command parameter separater to [separater]",
-	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
-	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
-	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
-	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default",
-	"[general]tier [tier] - Gives information on [tier]",
-	"[general]makecommand [name]((sep))[function] - Makes command [name]. See <a href='http://pokemon-online.eu/threads/bumble-songsings-new-client-scripts.26952/#post-377156'>this</a>",
-	"[general]setparamseparater [sep] - Sets your command parameter separater to [sep]"
+	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default"
 ];
 
 
@@ -278,21 +278,24 @@ String.prototype.parseCmdDesc = function ()
 {
 	var str = this;
 	
+	var sep = settings["paramSeparater"];
+	var cs = settings["commandSymbol"];
+	
 	var type = str.substr(0, str.indexOf("]") + 1);
 	
 	str = str.substr(type.length);
 	
 	type = type.substr(1, type.length - 2);
 	
-	var cmd = "<b>" + str.split(" ")[0] + "</b>";
+	var cmd = "<b>" + cs + str.split(" ")[0] + "</b>";
 	var params = str.substr(str.split(" ")[0].length).split(" - ")[0];
 	var desc = str.substr(str.indexOf(" - "));
-	var sep = settings["paramSeparater"];
 
 	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
-	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
+	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs);
 
-	var ret = "<a href='po:setmsg//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" + cmd + "</a> " + params + desc;
+	var ret = "<a href='po:setmsg//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" 
+		+ cmd + "</a> " + params + desc;
 
 	return ret;
 };
@@ -648,9 +651,14 @@ Utilities =
 		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1).toLowerCase() : "");
 	},
 	
-	loadTiers: function()
+	loadTiers: function(force)
 	{
-		if (!sys.fileExists(tiersPath))
+		if (force === undefined)
+		{
+			force = false;
+		}
+		
+		if (!sys.fileExists(tiersPath) || force)
 		{
 			this.getTiers();
 		}
@@ -716,6 +724,8 @@ Utilities =
 		
 		tiers = json;
 		this.writeFile(tiersPath, JSON.stringify(json));
+		
+		printMessage("Tiers were successfully fetched and parsed!");
 	},
 	
 	parseXML: function(xml)
@@ -1208,7 +1218,7 @@ Commands =
 				return;
 			}
 			
-			var amt = (params >= 2 && !isNaN(data[1]) ? data[1] : 100);
+			var amt = (params >= 2 && !isNaN(data[1]) ? data[1] : 50);
 			
 			var url = "http://stats.pokemon-online.eu/%1/".args([ tierList[tierList.indexOf(data[0])].replace(/ /g, "%20") ]);
 			
@@ -1230,9 +1240,14 @@ Commands =
 			
 			for (var i = 0; i < html.length; i++)
 			{
+				if (pokes.length >= amt)
+				{
+					break;
+				}
+					
 				var line = html[i].trim();
 				
-				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>" && pokes.length < amt)
+				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>")
 				{
 					var ind = line.indexOf("html'>");
 					
@@ -1461,50 +1476,6 @@ Commands =
 			
 			print("<hr>");
 		}
-		
-		
-		
-		
-		
-		else if (command === "settings" || command === "mysettings")
-		{
-			print("<hr>");
-			printMessage("<b><u>Settings:</u></b>");
-			for (var setting in settings)
-			{
-				if (settings.hasOwnProperty(setting))
-				{
-					var s = settings[setting];
-					printMessage("<b>%1:</b> %2".args([ setting, (s.toString() === "[object Object]" ? JSON.stringify(s).replace(/,/g, ", ").replace(/"/g, "") : s) ]));
-				}
-			}
-			print("<hr>");
-		}
-		else if (command === "setsetting")
-		{
-			if (params < 2)
-			{
-				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
-				return;
-			}
-			
-			settings[data[0]] = data[1];
-			Utilities.saveSettings();
-			printMessage("%1's value was set to: <b>%2</b>".args([ data[0], data[1] ]));
-		}
-		else if (command === "clearsetting" || command === "deletesetting")
-		{
-			if (params === 0)
-			{
-				printMessage("Clear which setting?");
-				return;
-			}
-			
-			delete settings[data[0]];
-			Utilities.saveSettings();
-			
-			printMessage("%1's value was cleared!".args([ data[0] ]));
-		}
 		else if (command === "tier")
 		{
 			var tierList = client.getTierList();
@@ -1524,6 +1495,7 @@ Commands =
 			[
 				"<b>%1 Pok&eacute;mon:</b> %2".args([ b, t.pokemons ]),
 				"<b>%1 Moves:</b> %2".args([ b, t.moves ]),
+				"<b>%1 Items:</b> %2".args([ b, t.items ]),
 				"<b>Mode:</b> " + [ "Singles", "Doubles", "Triples" ][t.mode],
 				"<b>Clauses:</b> " + (t.hasOwnProperty("clauses") ? t.clauses.replace(/,/g, ", ") : "--"),
 				"<b>Max Level:</b> " + t.maxLevel,
@@ -1588,6 +1560,55 @@ Commands =
 			Utilities.saveSettings();
 			
 			printMessage("Your command parameter separater has been changed to: <b>%1</b>".args([ data[0] ]));
+		}
+		else if (command === "updatetiers")
+		{
+			Utilities.loadTiers(true);
+		}
+		
+		
+		
+		
+		// setts
+		
+		else if (command === "settings" || command === "mysettings")
+		{
+			print("<hr>");
+			printMessage("<b><u>Settings:</u></b>");
+			for (var setting in settings)
+			{
+				if (settings.hasOwnProperty(setting))
+				{
+					var s = settings[setting];
+					printMessage("<b>%1:</b> %2".args([ setting, (s.toString() === "[object Object]" ? JSON.stringify(s).replace(/,/g, ", ").replace(/"/g, "") : s) ]));
+				}
+			}
+			print("<hr>");
+		}
+		else if (command === "setsetting")
+		{
+			if (params < 2)
+			{
+				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				return;
+			}
+			
+			settings[data[0]] = data[1];
+			Utilities.saveSettings();
+			printMessage("%1's value was set to: <b>%2</b>".args([ data[0], data[1] ]));
+		}
+		else if (command === "clearsetting" || command === "deletesetting")
+		{
+			if (params === 0)
+			{
+				printMessage("Clear which setting?");
+				return;
+			}
+			
+			delete settings[data[0]];
+			Utilities.saveSettings();
+			
+			printMessage("%1's value was cleared!".args([ data[0] ]));
 		}
 		
 		
