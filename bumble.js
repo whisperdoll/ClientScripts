@@ -108,7 +108,7 @@ String.prototype.args = function(arg)
 	ret = ret.replace(/(%[0-9]+)/g, "($1)");
 	
 	for (var i = 0; i < arg.length; i++)
-	{
+	{	
 		ret = ret.replace(new RegExp("\\(%" + (i + 1) + "\\)", "g"), arg[i].toString());
 	}
 	
@@ -258,9 +258,9 @@ Array.prototype.indexOf = function (item)
 	return -1;
 };
 
-String.prototype.indexOf = function (str)
+String.prototype.indexOf = function(str)
 {
-	if (str.length > this.length)
+	if (str === undefined || str.length === 0 || str.length > this.length)
 		return -1;
 	if (cmp(str, this))
 		return 0;
@@ -1554,6 +1554,7 @@ Commands =
 			if (params === 0)
 			{
 				printMessage("Set it to what?");
+				return;
 			}
 			
 			settings["paramSeparater"] = data[0];
@@ -1647,6 +1648,8 @@ PO =
 			var pos = message.indexOf(" ");
 			var data;
 			
+			var command = message.split(" ")[0].substr(commandSymbol.length).toLowerCase();
+			
 			if (pos === -1)
 			{
 				data = undefined;
@@ -1659,7 +1662,14 @@ PO =
 					
 					if (_data.indexOf(settings["paramSeparater"]) !== -1)
 					{
-						data = _data.split(settings["paramSeparater"]);
+						if (command === "setparamseparater" || command === "setseparater" || command === "setsep" || command === "setparamsep")
+						{
+							data = [ _data ]; // so we can do like /setsep ;; if current is ;
+						}
+						else
+						{
+							data = _data.split(settings["paramSeparater"]);
+						}
 					}
 					else
 					{
@@ -1668,7 +1678,7 @@ PO =
 				}
 			}
 			
-			Commands.handleCommand(message.split(" ")[0].substr(commandSymbol.length).toLowerCase(), data, channel);
+			Commands.handleCommand(command, data, channel);
 			
 			if (!acceptCommand)
 			{
