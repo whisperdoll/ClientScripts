@@ -2,20 +2,23 @@
 
 // version things, caps bc thats how version things are. got a problem? //
 
-var VERSION = "0.9.0.0";
-var VERSIONNAME = "Really Big Frog";
+var VERSION = "0.9.1.1";
+var VERSIONNAME = "Really Large Frog";
 
 var WHATSNEW =
 [
 
-	"•Built What's New? feature",
+	"<h3>9.0.0.0</h3>•Built What's New? feature",
 	"•Created trivia command",
 	"•Fixed an important typo (separater->separator) lol - This is reset back to the default, so you'll have to re-set it to whatever",
 	"•Improved usage command",
 	"•Built autoupdate command",
 	"•Did some scripty stuff",
 	"•Handled poke icon emotes internally, reducing the emotes file's size and making sure that all icons are supported",
-	"•General Improvements"
+	"•General Improvements",
+	"<h3>9.0.1.0</h3>•Added custom styling support for command links",
+	"•Added an 'add to friends' option for lookup",
+	"<h3>9.0.1.1</h3>•Trivia fixes"
 	
 ].join("<br>");
 
@@ -69,6 +72,7 @@ var defaults =
 	"shortcuts": {},
 	"ignoreChallenges": false,
 	"autoUpdate": true,
+	"commandLinkStyle": "text-decoration: none; font-weight:bold;",
 	"version": VERSION
 };
 
@@ -349,14 +353,15 @@ String.prototype.parseCmdDesc = function()
 	
 	type = type.substr(1, type.length - 2);
 	
-	var cmd = "<b>" + cs + str.split(" ")[0] + "</b>";
+	var cmd = cs + str.split(" ")[0];
 	var params = str.substr(str.split(" ")[0].length).split(" - ")[0];
 	var desc = str.substr(str.indexOf(" - "));
 
 	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs);
 
-	var ret = "<a href='po:" + (params.length === 0 ? "send" : "setmsg") + "//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" 
+	var ret = "<a href='po:" + (params.length === 0 ? "send" : "setmsg") + "//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep)
+		+ "' style='" + settings["commandLinkStyle"] + "'>" 
 		+ cmd + "</a> " + params + desc;
 
 	return ret;
@@ -909,7 +914,7 @@ Utilities =
 	
 	commandLink: function(text, command, linkCommand)
 	{
-		return this.link(text, "/" + command, linkCommand, "text-decoration:none; font-weight:bold;");
+		return this.link(text, "/" + command, linkCommand, settings["commandLinkStyle"]);
 	},
 	
 	printCommands: function(type)
@@ -1355,11 +1360,14 @@ Commands =
 				+ "Ignoring?: %7<br />"
 				+ "Colour: <font color='%4'><b>%4</b></font> / %8<br />" 
 				+ "Tiers: %9" + "<br />"
-				+ "Actions: <a href='po:pm/%5'>PM</a>, <a href='po:info/%5'>Challenge</a>%10"
-					+ ", <a href='po:ignore/%5'>Toggle Ignore</a>"
+				+ "Actions: <a href='po:pm/%5' %11>PM</a>, <a href='po:info/%5' %11>Challenge</a>%10"
+					+ ", <a href='po:ignore/%5' %11>Toggle Ignore</a>, " 
+					+ (settings["friends"].indexOf(user) === -1 ? Utilities.commandLink("Add to friends", "addfriend " + user)
+						: Utilities.commandLink("Remove from friends", "removefriend " + user))
 				+ "</h4>")
 				.args([ botHTML(), user, avatar, client.color(id), id, client.auth(id), (client.isIgnored(id) ? "Yes" : "No"), htr, _tiers.join(", "),
-					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : "")]));
+					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : ""), 
+					"style='" + settings["commandLinkStyle"] + "'"]));
 				
 			print("<hr>");
 		}
@@ -1737,7 +1745,7 @@ Commands =
 			
 			// <h2><span class="mw-headline" id="Trivia">Trivia</span></h2>
 			
-			var thing = Utilities.capitalize(data[0]);
+			var thing = Utilities.capitalize(data[0]).replace(/ /g, "_");
 			
 			printMessage("Fetching trivia...");
 			
@@ -1759,11 +1767,11 @@ Commands =
 			}
 			
 			var triv = html.substr(ind + l);
-			triv = triv.substr(0, triv.indexOf("<h3>"));
+			triv = triv.substr(0, triv.indexOf("<span class=\"mw-headline\"") - 4);
 			triv = triv.replace(/a href="\//gi, "a href=\"http://bulbapedia.bulbagarden.net/"); // fix links
 			
 			print("<hr><h2>%1 Trivia</h2>".args([ thing ]));
-			print(triv);
+			print(triv.trim());
 			print("<hr>");
 		}
 		else if (command === "autoupdate")
@@ -1782,6 +1790,19 @@ Commands =
 		else if (command === "whatsnew")
 		{
 			Utilities.printWhatsNew();
+		}
+		else if (command === "setcommandlinkstyle" || command === "setcmdlinkstyle" || command === "setcls")
+		{
+			if (params === 0)
+			{
+				printMessage("Set it to what?");
+				return;
+			}
+			
+			settings["commandLinkStyle"] = data[0];
+			Utilities.saveSettings();
+			
+			printMessage("Changed your " + Utilities.commandLink("command link", "commandslist") + " style!");
 		}
 		
 		
