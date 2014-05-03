@@ -1,6 +1,25 @@
 // Bumble // http://puu.sh/87TqH.png
 
+// version things, caps bc thats how version things are. got a problem? //
 
+var VERSION = "0.9.0.0";
+var VERSIONNAME = "Really Big Frog";
+
+var WHATSNEW =
+[
+
+	"•Built What's New? feature",
+	"•Created trivia command",
+	"•Fixed an important typo (separater->separator) lol - This is reset back to the default, so you'll have to re-set it to whatever",
+	"•Improved usage command",
+	"•Built autoupdate command",
+	"•Did some scripty stuff",
+	"•Handled poke icon emotes internally, reducing the emotes file's size and making sure that all icons are supported",
+	"•General Improvements"
+	
+].join("<br>");
+
+// actual things start here //
 
 var network = client.network();
 
@@ -15,6 +34,7 @@ var emotesCheck = false;
 var settings = {};
 var emotes = {};
 var tiers = {};
+var cache = {};
 
 var emoteString = "";
 var emoteList = [];
@@ -31,7 +51,7 @@ var defaults =
 	"botName": "Celebi",
 	"botSymbol": "±",
 	"commandSymbol": "~",
-	"paramSeparater": ";",
+	"paramSeparator": ";",
 	"authSymbols": 
 	{
 		"0": "",
@@ -47,7 +67,8 @@ var defaults =
 	"friends": [],
 	"fullwidth": false,
 	"shortcuts": {},
-	"ignoreChallenges": false
+	"ignoreChallenges": false,
+	"version": VERSION
 };
 
 var settingsPath = "bumble.json";
@@ -58,7 +79,9 @@ var commandsPath = "customCommands.json";
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
 
-var commands = [
+var commands =
+[
+
 	"[general]commandslist - Shows general commands",
 	"[general]commandslist [type] - Shows commands related to [type]. [type] can be: general, social, settings, custom, or all",
 	"[general]update - Checks for updates",
@@ -75,6 +98,7 @@ var commands = [
 	"[general]tier [tier] - Gives information on [tier]",
 	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
 	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
+	"[general]whatsnew - Displays the What's New? message for your current version",
 	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
 	"[general]makecommand [name]((sep))[function] - Makes command [name]. See <a href='http://pokemon-online.eu/threads/bumble-songsings-new-client-scripts.26952/#post-377156'>this</a>",
 	"[social]stalkwords - Shows a list of your stalkwords",
@@ -93,11 +117,13 @@ var commands = [
 	"[settings]setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
 	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
 	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
-	"[settings]setseparater [separater] - Sets the command parameter separater to [separater]",
+	"[settings]setseparator [separator] - Sets the command parameter separator to [separator]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
+	"[settings]autoupdate [on/off] - Turns automatic checking for updates at startup on or off",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
 	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default"
+
 ];
 
 
@@ -119,20 +145,41 @@ function init()
 {
 	initCheck = true;
 	
+	cache = {};
+	
+	var newUser = false;
+	
 	Utilities.appendFile(settingsPath, ""); // make sure it's there!
 	
 	if (Utilities.readFile(settingsPath) === "")
 	{
 		// say hi! //
 		
-		print(Utilities.centerText("<hr><h1>Hi!</hr><h3>Type <b><a href='po:send//commandslist' style='text-decoration:none;'>~commandslist</a></b> to get started!</h3><br />" + celebiPic + "<hr>"));
+		print(Utilities.centerText("<hr><h1>Hi!</h1><h2>Type "
+			+ Utilities.commandLink("~commandslist", "commandslist") + " to get started!</h2><br>" + celebiPic + "<hr>"));
+			
+		newUser = true;
 	}
 	
 	Utilities.loadCommands();
 	Utilities.loadSettings();
 	Utilities.loadTiers();
-	Utilities.checkForUpdate();
 	Utilities.loadEmotes();
+	
+	if (settings["autoUpdate"])
+	{
+		Utilities.checkForUpdate();
+	}
+	
+	if (settings["version"] !== VERSION || newUser)
+	{
+		// update version setting and print what's new //
+		
+		settings["version"] = VERSION;
+		Utilities.saveSettings();
+		
+		Utilities.printWhatsNew();
+	}
 }
 
 function print(message, channel, html)
@@ -183,7 +230,7 @@ function printUserMessage(m, u, channel)
 	}
 		
 	var flash = msg !== _msg;
-	var ps = settings["paramSeparater"];
+	var ps = settings["paramSeparator"];
 	
 	print("%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
 			.args
@@ -258,6 +305,20 @@ Array.prototype.indexOf = function (item)
 	return -1;
 };
 
+Array.prototype.clean = function(deleteValue)
+{
+	for (var i = 0; i < this.length; i++)
+	{
+		if (this[i] == deleteValue)
+		{         
+			this.splice(i, 1);
+			i--;
+		}
+	}
+	
+	return this;
+};
+
 String.prototype.indexOf = function(str)
 {
 	if (str === undefined || str.length === 0 || str.length > this.length)
@@ -274,11 +335,11 @@ String.prototype.indexOf = function(str)
 	return -1;
 };
 
-String.prototype.parseCmdDesc = function ()
+String.prototype.parseCmdDesc = function()
 {
 	var str = this;
 	
-	var sep = settings["paramSeparater"];
+	var sep = settings["paramSeparator"];
 	var cs = settings["commandSymbol"];
 	
 	var type = str.substr(0, str.indexOf("]") + 1);
@@ -294,7 +355,7 @@ String.prototype.parseCmdDesc = function ()
 	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
 	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs);
 
-	var ret = "<a href='po:setmsg//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" 
+	var ret = "<a href='po:" + (params.length === 0 ? "send" : "setmsg") + "//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep) + "' style='text-decoration:none;'>" 
 		+ cmd + "</a> " + params + desc;
 
 	return ret;
@@ -409,7 +470,7 @@ Utilities =
 		printMessage("Checking for update...");
 		
 		var myScript = this.readFile(sys.scriptsFolder + "scripts.js");
-		var onlineScript = sys.synchronousWebCall(scriptUrl);
+		var onlineScript = this.webCall(scriptUrl);
 		
 		if (myScript === onlineScript)
 		{
@@ -417,20 +478,33 @@ Utilities =
 			return;
 		}
 		
-		printMessage("There's an update available! <a href='po:send//doupdate'>(Click here to update!)</a>");
+		printMessage("There's an update available! " + Utilities.commandLink("(Click here to update)", "doupdate"));
 	},
 	
 	downloadUpdate: function()
 	{
-		printMessage("Downlaoding update... Hold on a sec...");
-		printMessage("I mean <i>downloading!</i> Whatever I'm updating &gt;.&lt;");
+		printMessage("Doanloading update... Hold on a sec...");
+		printMessage("I mean <i>downloading!</i> Why can't I get it right? :c");
 		
-		var resp = sys.synchronousWebCall(scriptUrl);
+		var resp = this.webCall(scriptUrl);
+		
+		if (resp === "")
+		{
+			printMessage("Coundn't update!");
+			return;
+		}
 		
 		printMessage("Mmmkay, updated!");
 		
 		sys.changeScript(resp);
 		sys.writeToFile(sys.scriptsFolder + "scripts.js", resp);
+	},
+	
+	webCall: function(url)
+	{
+		// ideally we'd like to prevent a bunch from running at once //
+		
+		return sys.synchronousWebCall(url);
 	},
 	
 	loadEmotes: function(force)
@@ -448,7 +522,7 @@ Utilities =
 			
 			printMessage("Hang on, getting emotes... This could take a sec...");
 			
-			var ejson = sys.synchronousWebCall(emotesUrl);
+			var ejson = this.webCall(emotesUrl);
 			
 			if (ejson.length < 1)
 			{
@@ -457,7 +531,7 @@ Utilities =
 				return;
 			}
 			
-			printMessage("Got 'em! See your emotes with <b><a href='po:send//emotes' style='text-decoration:none;'>%1emotes</a></b>!".args([ settings["commandSymbol"] ]));
+			printMessage("Got 'em! See your emotes with %1!".args([ Utilities.commandLink(settings["commandSymbol"] + "emotes", "emotes") ]));
 			
 			this.writeFile(emotesPath, ejson);
 			emotes = JSON.parse(ejson);
@@ -610,23 +684,50 @@ Utilities =
 		
 		var ret = text;
 		
-		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？]+)：/g, function(match)
+		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？　]+)：/g, function(match)
 		{
-			return Utilities.unfullwidth(match);
+			var _match = Utilities.unfullwidth(match).toLowerCase();
+			
+			
+			if (this.checkEmote(_match))
+			{
+				return _match;
+			}
+			
+			return match;
 		});
 		
-		return ret.replace(/\:([a-z0-9\+\-_\.'\!\?]+)\:/g, function(emote)
+		return ret.replace(/\:([a-zA-Z0-9\+\-_\.'\!\?\s]+)\:/g, function(emote)
 		{
 			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
+			
+			if (_emote === "unown-a")
+			{
+				_emote = "unown";
+			}
 			
 			if (emotes.hasOwnProperty(_emote))
 			{
 				var data = emotes[_emote];
-				return "<img src='%1'>".args([ data ]);
+				return "<img src='" + data + "'>";
+			}
+			else if (sys.pokeNum(_emote.replace(/_/g, " ")) > 0 || _emote === "missingno")
+			{
+				return "<img src='icon:" + sys.pokeNum(_emote.replace(/_/g, " ")) + "'>";
 			}
 			
-			return ":" + _emote + ":";
+			return emote;
 		});
+	},
+	
+	emote: function(name)
+	{
+		return this.parseEmotes(":" + name + ":", true);
+	},
+	
+	checkEmote: function(name)
+	{
+		return emotes.hasOwnProperty(name);
 	},
 	
 	shortcuts: function(text)
@@ -648,7 +749,33 @@ Utilities =
 	
 	capitalize: function(str)
 	{
-		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1).toLowerCase() : "");
+		str = str.toLowerCase();
+		
+		if (str.indexOf(" ") !== -1)
+		{
+			var _str = str.split(" ");
+			
+			for (var i = 0; i < _str.length; i++)
+			{
+				_str[i] = this.capitalize(_str[i]);
+			}
+			
+			str = _str.join(" ");
+		}
+		
+		if (str.indexOf("-") !== -1)
+		{
+			var _str = str.split("-");
+			
+			for (var i = 0; i < _str.length; i++)
+			{
+				_str[i] = this.capitalize(_str[i]);
+			}
+			
+			str = _str.join("-");
+		}
+	
+		return str.charAt(0).toUpperCase() + (str.length > 1 ? str.substr(1) : "");
 	},
 	
 	loadTiers: function(force)
@@ -681,7 +808,7 @@ Utilities =
 		var json = {};
 		
 		printMessage("Fetching tiers...");
-		var xml = sys.synchronousWebCall(url);
+		var xml = this.webCall(url);
 		
 		// is there any convenient way to parse xml?
 		
@@ -762,6 +889,28 @@ Utilities =
 		return json;
 	},
 	
+	link: function(text, linkData, linkCommand, style)
+	{
+		if (linkCommand === undefined)
+		{
+			linkCommand = "send";
+		}
+		
+		if (style === undefined)
+		{
+			style = "";
+		}
+		
+		linkData = linkData.replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"); // so it dont break or nothin
+		
+		return "<a href='po:%1/%2' style='%3'>%4</a>".args([ linkCommand, linkData, style, text ]);
+	},
+	
+	commandLink: function(text, command, linkCommand)
+	{
+		return this.link(text, "/" + command, linkCommand, "text-decoration:none; font-weight:bold;");
+	},
+	
 	printCommands: function(type)
 	{
 		print("<hr>");
@@ -822,6 +971,11 @@ Utilities =
 		}
 
 		print("<hr>");
+	},
+	
+	printWhatsNew: function()
+	{
+		print(Utilities.centerText("<hr><h1>Bumble Version %1<br><i>\"%2\"</i></h1><code>By SongSing</code><h2>What's New?</h2>%3<br><hr>".args([ VERSION, VERSIONNAME, WHATSNEW ])));
 	},
 	
 	randomInt: function(arg1, arg2)
@@ -970,7 +1124,7 @@ Commands =
 			if (params === 1)
 			{
 				printMessage("Set it to what level auth? The command is %1setauthsymbol symbol%2level!"
-					.args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+					.args([ settings["commandSymbol"], settings["paramSeparator"] ]));
 				return;
 			}
 			
@@ -1046,7 +1200,7 @@ Commands =
 			
 			if (!cmp(data[0], "on") && !cmp(data[0], "off"))
 			{
-				printMessage("<a href='po:send//emotes on' %1>On</a> or <a href='po:send//emotes off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "emotes on"), Utilities.commandLink("off", "emotes off") ]));
 				return;
 			}
 			
@@ -1189,7 +1343,7 @@ Commands =
 			
 			for (var i = 0; i < _tiers.length; i++)
 			{
-				_tiers[i] = "<a href='po:send//tier %1'>%1</a>".args([ _tiers[i] ]);
+				_tiers[i] = Utilities.commandLink(_tiers[i], _tiers[i]);
 			}
 
 			print("<hr>");
@@ -1218,21 +1372,21 @@ Commands =
 				return;
 			}
 			
-			var amt = (params >= 2 && !isNaN(data[1]) ? data[1] : 50);
+			var amt = parseInt((params >= 2 && !isNaN(data[1]) ? data[1] : 50));
 			
 			var url = "http://stats.pokemon-online.eu/%1/".args([ tierList[tierList.indexOf(data[0])].replace(/ /g, "%20") ]);
 			
 			printMessage("Fetching usage stats...");
 			
-			var html = sys.synchronousWebCall(url + "index.html");
+			var html = Utilities.webCall(url + "ranked_stats.txt");
 			
 			if (html === "")
 			{
-				printMessage("Couldn't fetch it!");
+				printMessage("Couldn't connect or there's no usage or something weird like that! Try again later or something!");
 				return;
 			}
 			
-			html = html.replace(/\r/gi, "").split("\n");
+			html = html.replace(/\r/gi, "").split("\n").clean("");
 			
 			// html is array now //
 			
@@ -1240,36 +1394,42 @@ Commands =
 			
 			for (var i = 0; i < html.length; i++)
 			{
-				if (pokes.length >= amt)
+				if (i === amt)
 				{
 					break;
 				}
-					
-				var line = html[i].trim();
 				
-				if (line.substr(0, 22) === "<p class='topPokemon'>" || line.substr(0, 22) === "<p class='lowPokemon'>")
-				{
-					var ind = line.indexOf("html'>");
-					
-					var poke = line.substr(ind + 6);
-					poke = poke.substr(0, poke.indexOf("</a>"));
-					
-					var percent = line.substr(ind + 12 + poke.length);
-					percent = percent.substr(0, percent.indexOf(")"));
-					percent = "<small>%1</small>".args([ percent ]);
-					
-					var _poke = "<a href='%1' style='text-decoration:none'>%2</a>".args([ url + sys.pokeNum(poke) + ".html", poke]);
-					
-					pokes.push("#%1 - %2 %3 %4".args
+				// format: name usage battles
+				
+				var line = html[i];
+				
+				// we have to do this backwards bc some pokes have spaces in names //
+				
+				var ind = line.lastIndexOf(" ");
+				
+				var battles = line.substr(ind + 1);
+				
+				line = line.substr(0, ind);
+				
+				ind = line.lastIndexOf(" ");
+				
+				var usage = line.substr(ind + 1);
+				
+				line = line.substr(0, ind);
+				
+				var poke = line;
+				var _poke = "<a href='%1' style='text-decoration:none'>%2</a>".args([ url + sys.pokeNum(poke) + ".html", poke]);
+				
+				var no = i + 1;
+				
+				pokes.push("#%1 - %2 %3 <small>%4% - %5 battles".args
 					([
-						(pokes.length + 1), 
-						"<img src='" + emotes[poke.toLowerCase()] + "'>",
+						no,
+						"<img src='icon:" + sys.pokeNum(poke) + "'>",
 						_poke,
-						percent
+						usage,
+						battles
 					]));
-						
-					//print(html[i]);
-				}
 			}
 			
 			var tc = "";
@@ -1288,6 +1448,7 @@ Commands =
 			var table = "<table width='100%'>" + tc + "</table>";
 			
 			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], table ]));
+			print(amt);
 		}
 		else if (command === "pm")
 		{
@@ -1375,7 +1536,7 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("<a href='po:send//enrichedtext on' %1>On</a> or <a href='po:send//enrichedtext off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "enrichedtext on"), Utilities.commandLink("off", "enrichedtext off") ]));
 				return;
 			}
 			
@@ -1387,7 +1548,7 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("<a href='po:send//fullwidth on' %1>On</a> or <a href='po:send//fullwidth off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "fullwidth on"), Utilities.commandLink("off", "fullwidth off") ]));
 				return;
 			}
 			
@@ -1399,7 +1560,7 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("<a href='po:send//ignorechallenges on' %1>On</a> or <a href='po:send//ignorechallenges off' %1>off</a>?".args([ "style='text-decoration:none; font-weight:bold;'" ]));
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "ignorechallenges on"), Utilities.commandLink("off", "ignorechallenges off") ]));
 				return;
 			}
 			
@@ -1419,7 +1580,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1addshortcut phrase%2shortcut".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				printMessage("It's %1addshortcut phrase%2shortcut".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
 				return;
 			}
 			
@@ -1444,7 +1605,7 @@ Commands =
 			
 			if (!sc.hasOwnProperty(data[0]))
 			{
-				printMessage("That's not a shortcut! <a href='po:send//shortcuts'>(View shortcuts)</a>");
+				printMessage("That's not a shortcut! " + Utilities.commandLink("(View shortcuts)", "shortcuts"));
 				return;
 			}
 			
@@ -1503,7 +1664,7 @@ Commands =
 			];
 			
 			print("<hr>");
-			print("<a href='po:send//usage %1' style='text-decoration:none'><h1>%1</h1</a>".args([ t.name ]));
+			print(Utilities.commandLink("<h1>" + t.name + "</h1>", "usage " + t.name));
 			print(info.join("<br>"));
 			print("<hr>");
 		}
@@ -1515,7 +1676,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1fakelog name%2message".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				printMessage("It's %1fakelog name%2message".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
 				return;
 			}
 			
@@ -1533,7 +1694,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1makecommand name%2function".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				printMessage("It's %1makecommand name%2function".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
 				return;
 			}
 			
@@ -1549,7 +1710,7 @@ Commands =
 			
 			Utilities.saveSettings();
 		}
-		else if (command === "setparamseparater" || command === "setseparater")
+		else if (command === "setparamseparator" || command === "setseparator" || command === "setsep" || command === "setparamsep")
 		{
 			if (params === 0)
 			{
@@ -1557,14 +1718,70 @@ Commands =
 				return;
 			}
 			
-			settings["paramSeparater"] = data[0];
+			settings["paramSeparator"] = data[0];
 			Utilities.saveSettings();
 			
-			printMessage("Your command parameter separater has been changed to: <b>%1</b>".args([ data[0] ]));
+			printMessage("Your command parameter separator has been changed to: <b>%1</b>".args([ data[0] ]));
 		}
 		else if (command === "updatetiers")
 		{
 			Utilities.loadTiers(true);
+		}
+		else if (command === "trivia")
+		{
+			if (params === 0)
+			{
+				printMessage("Get trivia on what?");
+				return;
+			}
+			
+			// <h2><span class="mw-headline" id="Trivia">Trivia</span></h2>
+			
+			var thing = Utilities.capitalize(data[0]);
+			
+			printMessage("Fetching trivia...");
+			
+			var html = Utilities.webCall("http://bulbapedia.bulbagarden.net/wiki/" + thing);
+			
+			if (html === "")
+			{
+				printMessage("Couldn't connect to Bulbapedia!");
+				return;
+			}
+			
+			var l = "<h2><span class=\"mw-headline\" id=\"Trivia\">Trivia</span></h2>".length;
+			var ind = html.indexOf("<h2><span class=\"mw-headline\" id=\"Trivia\">Trivia</span></h2>");
+			
+			if (ind === -1)
+			{
+				printMessage("There's no trivia on that! " + "http://bulbapedia.bulbagarden.net/wiki/" + thing);
+				return;
+			}
+			
+			var triv = html.substr(ind + l);
+			triv = triv.substr(0, triv.indexOf("<h3>"));
+			triv = triv.replace(/a href="\//gi, "a href=\"http://bulbapedia.bulbagarden.net/"); // fix links
+			
+			print("<hr><h2>%1 Trivia</h2>".args([ thing ]));
+			print(triv);
+			print("<hr>");
+		}
+		else if (command === "autoupdate")
+		{
+			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+			{
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "autoupdate on"), Utilities.commandLink("off", "autoupdate off") ]));
+				return;
+			}
+			
+			settings["autoUpdate"] = cmp(data[0], "on");
+			Utilities.saveSettings();
+			
+			printMessage((cmp(data[0], "on") ? "I'll check for updates when you log on!" : "I won't check for updates unless you tell me to!"));
+		}
+		else if (command === "whatsnew")
+		{
+			Utilities.printWhatsNew();
 		}
 		
 		
@@ -1590,7 +1807,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparater"] ]));
+				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
 				return;
 			}
 			
@@ -1621,7 +1838,7 @@ Commands =
 		else
 		{
 			acceptCommand = false;
-			say("/" + command + (params > 0 ? " " + data.join(settings["paramSeparater"]) : ""));
+			say("/" + command + (params > 0 ? " " + data.join(settings["paramSeparator"]) : ""));
 		}
 	}
 	
@@ -1660,15 +1877,15 @@ PO =
 				{
 					var _data = message.substr(pos + 1);
 					
-					if (_data.indexOf(settings["paramSeparater"]) !== -1)
+					if (_data.indexOf(settings["paramSeparator"]) !== -1)
 					{
-						if (command === "setparamseparater" || command === "setseparater" || command === "setsep" || command === "setparamsep")
+						if (command === "setparamseparator" || command === "setseparator" || command === "setsep" || command === "setparamsep")
 						{
 							data = [ _data ]; // so we can do like /setsep ;; if current is ;
 						}
 						else
 						{
-							data = _data.split(settings["paramSeparater"]);
+							data = _data.split(settings["paramSeparator"]);
 						}
 					}
 					else
