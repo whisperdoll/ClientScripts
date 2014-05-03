@@ -1194,7 +1194,7 @@ Commands =
 		{
 			if (params === 0)
 			{
-				print("<hr><br>%1 Here are all of the emotes:<br>%2<br><hr>".args([ botHTML(), emoteString ]));
+				print("<hr><br>%1 Here are all of the emotes:<br>%2<br><br><b><u>Note:</u></b> You can also do poke icons, like :bulbasaur:<br><hr>".args([ botHTML(), emoteString ]));
 				return;
 			}
 			
