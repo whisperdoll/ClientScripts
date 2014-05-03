@@ -68,6 +68,7 @@ var defaults =
 	"fullwidth": false,
 	"shortcuts": {},
 	"ignoreChallenges": false,
+	"autoUpdate": true,
 	"version": VERSION
 };
 
