@@ -1449,7 +1449,6 @@ Commands =
 			var table = "<table width='100%'>" + tc + "</table>";
 			
 			print(Utilities.centerText("<hr><h1>Usage Statistics for %1:</hr><h3>%2</h3><hr>").args([ tierList[tierList.indexOf(data[0])], table ]));
-			print(amt);
 		}
 		else if (command === "pm")
 		{
