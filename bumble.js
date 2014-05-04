@@ -8,7 +8,7 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.3.0";
+var VERSION = "0.9.3.1";
 var VERSIONNAME = "The Boston Massacre";
 
 var WHATSNEW =
@@ -20,6 +20,7 @@ var WHATSNEW =
 	"•Cleans up unused settings by default and checks to make sure defaults and settings have same value types",
 	"<h3>0.9.3.0</h3>•Autoresponse",
 	"•Reached 2000 lines of code (which isn't as hard when you put brackets on their own lines) :3",
+	"<h3>0.9.3.1</h3>•Bug fixes",
 	"",
 	"<b>If you haven't updated emotes recently, you should probably do that since the file is now alot smaller and things</b>"
 
@@ -362,7 +363,7 @@ String.prototype.parseCmdDesc = function()
 	var desc = str.substr(str.indexOf(" - "));
 
 	params = params.replace(/\(\(sep\)\)/g, sep).replace(/\[/g, "<code>[").replace(/]/g, "]</code>");
-	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs).replace(/\(\(ownName\)\)/g, client.ownName());
+	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs).replace(/\(\(sep\)\)/g, sep).replace(/\(\(ownName\)\)/g, client.ownName());
 
 	var ret = "<a href='po:" + (params.length === 0 ? "send" : "setmsg") + "//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep)
 		+ "' style='" + settings["commandLinkStyle"] + "'>" 
@@ -1852,6 +1853,18 @@ Commands =
 			
 			print("<hr>");
 		}
+		else if (command === "allowdefine")
+		{
+			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+			{
+				printMessage("%1 or %2?".args([ Utilities.commandLink("On", "allowdefine on"), Utilities.commandLink("off", "allowdefine off") ]));
+				return;
+			}
+			
+			settings["allowDefine"] = cmp(data[0], "on");
+			Utilities.saveSettings();
+			printMessage("External defining was turned %1!".args([ data[0].toLowerCase() ]));
+		}
 		else if (command ==="lookup")
 		{
 			var id = client.id(data[0]);
@@ -2515,6 +2528,11 @@ PO =
 			}
 			
 			Commands.handleCommand(command, data, channel);
+			
+			if (!acceptCommand)
+			{
+				acceptCommand = true;
+			}
 		
 			return;
 		}
@@ -2561,9 +2579,10 @@ PO =
 				say(settings["responses"][m].randomItem());
 			}
 			
-			if (settings["allowDefine"] && m.startsWith(client.ownName() + "define "))
+			if (settings["allowDefine"] && m.toLowerCase().startsWith(client.ownName().toLowerCase() + "define "))
 			{
-				if (!m.match(new RegExp(Utilities.escapeRegex(settings["paramSeparator"]))).length === 1)
+				var mm = m.match(new RegExp(Utilities.escapeRegex(settings["paramSeparator"])));
+				if (mm === null || !mm.length === 1)
 				{
 					say("It's %1define keyphrase%2response!".args([ client.ownName(), settings["paramSeparator"] ]));
 				}
