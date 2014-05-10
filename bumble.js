@@ -10,8 +10,8 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.4.0";
-var VERSIONNAME = "Cameraman";
+var VERSION = "0.9.4.1";
+var VERSIONNAME = "Cameraman's Lament";
 
 var WHATSNEW =
 [
@@ -20,6 +20,7 @@ var WHATSNEW =
 	"•Added command to turn responses off without deleting them all",
 	"•Much internal restructuring",
 	"•Plugins system replacing custom commands",
+	"<h3>0.9.4.1</h3>•Fixed a bug having to do with lookup tiers",
 	"",
 	"<b>If you haven't updated emotes recently, you should probably do that since the file is now alot smaller and things</b>"
 
@@ -1965,7 +1966,7 @@ Commands =
 			
 			for (var i = 0; i < _tiers.length; i++)
 			{
-				_tiers[i] = Utilities.commandLink(_tiers[i], _tiers[i]);
+				_tiers[i] = Utilities.commandLink(_tiers[i], "tier " + _tiers[i]);
 			}
 
 			print("<hr>");
