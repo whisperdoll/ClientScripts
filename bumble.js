@@ -4,29 +4,30 @@
 // use eval to set a global value for it (like "plugin_" + name)
 // then call functions with eval(pluginname + "." + functionname + "(" + params.join(",") + ")") or somethin
 
+// other idea for plugins: write it like normal bumble script and eval it
+
 // TODO: maybe make Commands.handleCommand return a bool for if it threw an error or whatever, idk if this would be useful atm though
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.3.1";
-var VERSIONNAME = "The Boston Massacre";
+var VERSION = "0.9.4.0";
+var VERSIONNAME = "Cameraman";
 
 var WHATSNEW =
 [
 
-	"<h3>0.9.2.0</h3>•Channel Logging",
-	"•Scripty Stuff",
-	"•We're not on Version 9 lol",
-	"•Cleans up unused settings by default and checks to make sure defaults and settings have same value types",
-	"<h3>0.9.3.0</h3>•Autoresponse",
-	"•Reached 2000 lines of code (which isn't as hard when you put brackets on their own lines) :3",
-	"<h3>0.9.3.1</h3>•Bug fixes",
+	"<h3>0.9.4.0</h3>•Fixed weird webcall bug",
+	"•Added command to turn responses off without deleting them all",
+	"•Much internal restructuring",
+	"•Plugins system replacing custom commands",
 	"",
 	"<b>If you haven't updated emotes recently, you should probably do that since the file is now alot smaller and things</b>"
 
 ].join("<br>");
 
 // actual things start here //
+
+var globe = this;
 
 var network = client.network();
 
@@ -41,15 +42,14 @@ var initCheck = false;
 var emotesCheck = false;
 
 var settings = {}; // holds settings
-var emotes = {}; // holds emote data, not the actual img tag and everything, so use Utilities.emote(name) instead of emotes[name]
+var emotes = {}; // holds emote data, not the actual img tag and everything, so use Emotes.emote(name) instead of emotes[name]
 var tiers = {}; // holds tier data
-var customCommands = {}; // holds custom command data
 var cache = {}; // holds various things, used for dynamic vars that aren't necessarily needed. Good for passing vars throughout the script.
 
 var emoteString = "";
 var emoteList = [];
 
-var commandTypes = ["general", "social", "settings", "custom", "all"];
+var commandTypes = ["general", "social", "settings", "all"];
 
 var defaults =
 {
@@ -83,6 +83,7 @@ var defaults =
 	"responses": {},
 	"responseBlacklist": [ "Tohjo Falls", "Tournaments", "Trivia", "Mafia" ],
 	"allowDefine": false,
+	"responsesOn": true,
 	"cleanSettings": true,
 	"version": VERSION
 };
@@ -90,8 +91,8 @@ var defaults =
 var settingsPath = "bumble.json";
 var emotesPath = "emotes.json";
 var tiersPath = "tiers.json";
-var commandsPath = "customCommands.json";
 var logPath = "Channel Logs/";
+var pluginsPath = "Bumble Plugins/"
 
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
@@ -103,7 +104,7 @@ var commands =
 [
 
 	"[general]commandslist - Shows general commands",
-	"[general]commandslist [type] - Shows commands related to [type]. [type] can be: general, social, settings, custom, or all",
+	"[general]commandslist [type] - Shows commands related to [type]. [type] can be: general, social, settings, or all",
 	"[general]update - Checks for updates",
 	"[general]updateemotes - Downloads the emotes file",
 	"[general]updatetiers - Parses and downloads PO's current tiers for use with the ((cs))tiers command",
@@ -116,12 +117,11 @@ var commands =
 	"[general]emotes [on/off] - Enables/disables emotes",
 	"[general]ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	"[general]tier [tier] - Gives information on [tier]",
-	"[general]usage [tier] - Gives top 100 used Pok&eacute;mon in [tier]",
+	"[general]usage [tier] - Gives top 50 used Pok&eacute;mon in [tier]",
 	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
 	"[general]whatsnew - Displays the What's New? message for your current version",
 	"[general]randomno [min]((sep))[max] - Gives a random number between [min] and [max]",
 	"[general]reconnect - Attempts to reconnect to the server",
-	"[general]makecommand [name]((sep))[function] - Makes command [name]. See <a href='http://pokemon-online.eu/threads/bumble-songsings-new-client-scripts.26952/#post-377156'>this</a>",
 	"[social]stalkwords - Shows a list of your stalkwords",
 	"[social]addstalkword [stalkword] - Adds [stalkword] to your stalkwords",
 	"[social]removestalkword [stalkword] - Removes [stalkword] from your stalkwords",
@@ -135,6 +135,7 @@ var commands =
 	"[social]addlogchannel [channel] - Adds [channel] to the channels you're logging",
 	"[social]removelogchannel [channel] - Removes [channel] from the channels you're logging",
 	"[social]responses - Shows a list of your autoresponse keyphrases and responses",
+	"[social]responses [on/off] - Turns autoresponse on or off",
 	"[social]addresponse [keyphrase]((sep))[response] - Adds [response] to [keyphrase]",
 	"[social]removeresponse [keyphrase]((sep))[response] - Removes [response] from [keyphrase]",
 	"[social]clearresponses [keyphrase] - Clears all responses from [keyphrase] and deletes [keyphrase]",
@@ -202,22 +203,22 @@ function init()
 		newUser = true;
 	}
 	
-	Utilities.loadCommands();
-	Utilities.loadSettings();
+	Settings.load();
 	Utilities.loadTiers();
-	Utilities.loadEmotes();
+	Emotes.load();
+	Plugins.load();
 	
-	if (settings["autoUpdate"])
+	if (settings.autoUpdate)
 	{
 		Utilities.checkForUpdate();
 	}
 	
-	if (settings["version"] !== VERSION || newUser)
+	if (settings.version !== VERSION || newUser)
 	{
 		// update version setting and print what's new //
 		
-		settings["version"] = VERSION;
-		Utilities.saveSettings();
+		settings.version = VERSION;
+		Settings.save();
 		
 		Utilities.printWhatsNew();
 	}
@@ -267,8 +268,8 @@ function botHTML(timestamp, colon, symbol)
 	if (symbol === undefined)
 		symbol = true;
 
-	return "<font color='" + settings["botColour"] + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? settings["botSymbol"] : "")
-		+ settings["botName"] + (colon ? ":" : "") + "</font></b>";
+	return "<font color='" + settings.botColour + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? settings.botSymbol : "")
+		+ settings.botName + (colon ? ":" : "") + "</font></b>";
 }
 
 function cmp(x1, x2)
@@ -288,7 +289,7 @@ function cmp(x1, x2)
 }
 
 Array.prototype.indexOf = function (item, caseSensitive)
-{
+{	
 	if (caseSensitive === undefined)
 	{
 		caseSensitive = false;
@@ -303,6 +304,11 @@ Array.prototype.indexOf = function (item, caseSensitive)
 	}
 
 	return -1;
+};
+
+Array.prototype.copy = function()
+{
+	return this.slice(0);
 };
 
 Array.prototype.randomItem = function()
@@ -349,8 +355,8 @@ String.prototype.parseCmdDesc = function()
 {
 	var str = this;
 	
-	var sep = settings["paramSeparator"];
-	var cs = settings["commandSymbol"];
+	var sep = settings.paramSeparator;
+	var cs = settings.commandSymbol;
 	
 	var type = str.substr(0, str.indexOf("]") + 1);
 	
@@ -366,7 +372,7 @@ String.prototype.parseCmdDesc = function()
 	desc = desc.replace(/\[/g, "<code>[").replace(/]/g, "]</code>").replace(/\(\(cs\)\)/g, cs).replace(/\(\(sep\)\)/g, sep).replace(/\(\(ownName\)\)/g, client.ownName());
 
 	var ret = "<a href='po:" + (params.length === 0 ? "send" : "setmsg") + "//" + str.substr(0, str.indexOf(" - ")).replace(/\(\(sep\)\)/g, sep)
-		+ "' style='" + settings["commandLinkStyle"] + "'>" 
+		+ "' style='" + settings.commandLinkStyle + "'>" 
 		+ cmd + "</a> " + params + desc;
 
 	return ret;
@@ -394,13 +400,9 @@ String.prototype.endsWith = function(text)
 
 
 
-
-
-
-
-Utilities =
+Settings =
 ({
-	loadSettings: function(json)
+	load: function(json)
 	{
 		if (json === undefined)
 		{
@@ -411,7 +413,7 @@ Utilities =
 			}
 			else
 			{
-				settings = JSON.parse(this.readFile(settingsPath));
+				settings = JSON.parse(Utilities.readFile(settingsPath));
 			}
 		}
 		else
@@ -419,21 +421,15 @@ Utilities =
 			settings = JSON.parse(json);
 		}
 		
-		this.saveSettings();
+		this.save();
 	},
-	
-	saveSettings: function()
+	save: function()
 	{
 		for (var key in defaults)
 		{
 			if (defaults.hasOwnProperty(key) && !settings.hasOwnProperty(key)) // defaults has values that settings don't, so we'll need to add them in!
 			{
 				settings[key] = defaults[key];
-			}
-			else if (settings.hasOwnProperty(key) && !defaults.hasOwnProperty(key))
-			{
-				if (settings["cleanSettings"])
-					delete settings[key]; // cleans up unused settings
 			}
 			else // actual setting, check to make sure its not broke
 			{
@@ -445,63 +441,178 @@ Utilities =
 			}
 		}
 		
-		this.writeFile(settingsPath, JSON.stringify(settings));
-		
-		this.saveCommands();
-	},
-	
-	loadCommands: function()
-	{
-		customCommands = {};
-		
-		this.appendFile(commandsPath, "");
-		
-		if (this.readFile(commandsPath) === "")
-			this.writeFile(commandsPath, JSON.stringify(customCommands));
-		
-		customCommands = JSON.parse(this.readFile(commandsPath));
-		
-		for (var cmd in customCommands)
+		if (settings.cleanSettings)
 		{
-			if (customCommands.hasOwnProperty(cmd))
+			for (var key in settings)
 			{
-				eval(cmd + "=" + customCommands[cmd]);
-				
-				// we need to parse these to put in commands ok //
-				
-				// name [param1] [param2] - desc //
-				
-				var name = cmd.substr("custom_".length);
-				
-				var params = customCommands[cmd];
-				params = params.substr(params.indexOf("(") + 1).replace(/ /g, "");
-				params = params.substr(0, params.indexOf(")"));
-				params = (params.indexOf(",") === -1 ? [params] : params.split(","));
-				
-				// params is array now //
-				
-				if (!(params.length === 1 && params[0] === ""))
+				if (settings.hasOwnProperty(key) && !defaults.hasOwnProperty(key))
 				{
-					for (var i = 0; i < params.length; i++)
-					{
-						params[i] = "[" + params[i] + "]";
-					}
+					delete settings[key]; // cleans up unused settings
 				}
-				
-				var disp = "[custom]" + name.trim() + " " + (params.length === 1 && params[0] === "" ? "" : params.join("((sep))"))
-					+ " - Custom command <a href=\"po:send/%1\">(View function)</a>".args([ "/eval print('<hr><br>" 
-						+ customCommands[cmd].replace(/'/g, "\\'").replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F") + "<br><hr>')" ]);
-				
-				if (commands.indexOf(disp) === -1)
-					commands.push(disp);
+			}
+		}
+		
+		Utilities.writeFile(settingsPath, JSON.stringify(settings));
+	}
+});
+
+Emotes =
+({
+	load: function(force)
+	{
+		if (force === undefined)
+		{
+			force = false;
+		}
+		
+		Utilities.appendFile(emotesPath, "");
+		
+		if (Utilities.readFile(emotesPath) === "" || force)
+		{
+			// get emotes
+			
+			printMessage("Hang on, getting emotes... This could take a sec...");
+			
+			var ejson = Utilities.webCall(emotesUrl);
+			
+			if (ejson.length < 1)
+			{
+				printMessage("There was a problem downloading emotes. Turning emotes off.");
+				// turn off
+				return;
+			}
+			
+			printMessage("Got 'em! See your emotes with %1!".args([ Utilities.commandLink(settings.commandSymbol + "emotes", "emotes") ]));
+			
+			Utilities.writeFile(emotesPath, ejson);
+			emotes = JSON.parse(ejson);
+		}
+		else
+		{
+			emotes = JSON.parse(Utilities.readFile(emotesPath));
+		}
+		
+		emoteString = "";
+		
+		for (var x in emotes)
+		{
+			if (emotes.hasOwnProperty(x))
+			{
+				var emote = "<a href='po:appendmsg/:%1:'>%2</a> ".args([ x, Emotes.emote(x) ]);
+				emoteString += emote;
+				emoteList.push(emote);
 			}
 		}
 	},
-	
-	saveCommands: function()
+	parse: function(text, force)
 	{
-		this.writeFile(commandsPath, JSON.stringify(customCommands));
+		if (!settings.emotes && !force)
+		{
+			return text;
+		}
+		
+		var ret = text;
+		
+		// we need to check to see if they did it in fullwidth, but we shouldn't just unfullwidth the whole thing //
+		
+		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？　]+)：/g, function(match)
+		{
+			var _match = Utilities.unfullwidth(match).toLowerCase();
+			
+			
+			if (Emotes.check(_match))
+			{
+				return _match;
+			}
+			
+			return match;
+		});
+		
+		return ret.replace(/\:([a-zA-Z0-9\+\-_\.'\!\?\s]+)\:/g, function(match) // extra things are for pokenames
+		{
+			var name = match.substr(1, match.length - 2).toLowerCase();
+			
+			// special cases //
+			
+			if (name === "unown-a")
+			{
+				name = "unown";
+			}
+			
+			// now return //
+			
+			if (Emotes.check(name))
+			{
+				return Emotes.emote(name);
+			}
+			
+			return match;
+		});
 	},
+	
+	emote: function(name)
+	{
+		var pname = name.replace(/_/g, " ");
+		
+		if (emotes.hasOwnProperty(name))
+		{
+			return "<img src='" + emotes[name] + "'>";
+		}
+		else if (sys.pokeNum(pname) > 0 || cmp(pname, "missingno"))
+		{
+			return "<img src='icon:" + sys.pokeNum(pname) + "'>";
+		}
+	},
+	
+	check: function(name)
+	{
+		return emotes.hasOwnProperty(name) || sys.pokeNum(name) > 0 || cmp(name, "missingno");
+	}
+});
+
+
+Plugins =
+({
+	load: function()
+	{
+		var files = sys.filesForDirectory(pluginsPath);
+		
+		if (typeof(files) === "undefined")
+		{
+			sys.makeDir(logPath);
+			files = [];
+		}
+		
+		for (var i = 0; i < files.length; i++)
+		{
+			if (!files[i].endsWith(".js"))
+			{
+				continue;
+			}
+			
+			try
+			{
+				eval(Utilities.readFile(pluginsPath + files[i]));
+				printMessage("Loaded plugin: " + files[i]);
+			}
+			catch (err)
+			{
+				printMessage("There was an error in loading plugin " + files[i] + "!");
+				printMessage("Error: " + err);
+				
+				if (err.lineNumber)
+				{
+					printMessage("On line: " + err.lineNumber);
+				}
+			}
+		}
+	}
+});
+
+
+
+Utilities =
+({
 	
 	checkForUpdate: function()
 	{
@@ -509,6 +620,12 @@ Utilities =
 		
 		var myScript = this.readFile(sys.scriptsFolder + "scripts.js");
 		var onlineScript = this.webCall(scriptUrl);
+		
+		if (!onlineScript)
+		{
+			printMessage("Couldn't connect!");
+			return;
+		}
 		
 		if (myScript === onlineScript)
 		{
@@ -526,7 +643,7 @@ Utilities =
 		
 		var resp = this.webCall(scriptUrl);
 		
-		if (resp === "")
+		if (!resp)
 		{
 			printMessage("Coundn't update!");
 			return;
@@ -538,11 +655,33 @@ Utilities =
 		sys.writeToFile(sys.scriptsFolder + "scripts.js", resp);
 	},
 	
-	webCall: function(url)
+	webCall: function(url, args)
 	{
-		// ideally we'd like to prevent a bunch from running at once //
+		// prevent weird webcall bug //
 		
-		return sys.synchronousWebCall(url);
+		if (!cache.webCalling)
+		{
+			cache.webCalling = true;
+			
+			var ret;
+			
+			if (args === undefined)
+				ret = sys.synchronousWebCall(url);
+			else
+				ret = sys.synchronousWebCall(url, args);
+			
+			while (ret === undefined)
+			{
+				// wait
+			}
+			
+			cache.webCalling = false;
+			
+			return ret;
+		}
+		
+		printMessage("<b>A webcall is currently in progress - try again later.</b>");
+		return "";
 	},
 	
 	channelNames: function()
@@ -565,53 +704,6 @@ Utilities =
 	isChannel: function(name)
 	{
 		return this.channelNames().indexOf(name) !== -1;
-	},
-	
-	loadEmotes: function(force)
-	{
-		if (force === undefined)
-		{
-			force = false;
-		}
-		
-		this.appendFile(emotesPath, "");
-		
-		if (this.readFile(emotesPath) === "" || force)
-		{
-			// get emotes
-			
-			printMessage("Hang on, getting emotes... This could take a sec...");
-			
-			var ejson = this.webCall(emotesUrl);
-			
-			if (ejson.length < 1)
-			{
-				printMessage("There was a problem downloading emotes. Turning emotes off.");
-				// turn off
-				return;
-			}
-			
-			printMessage("Got 'em! See your emotes with %1!".args([ Utilities.commandLink(settings["commandSymbol"] + "emotes", "emotes") ]));
-			
-			this.writeFile(emotesPath, ejson);
-			emotes = JSON.parse(ejson);
-		}
-		else
-		{
-			emotes = JSON.parse(this.readFile(emotesPath));
-		}
-		
-		emoteString = "";
-		
-		for (var x in emotes)
-		{
-			if (emotes.hasOwnProperty(x))
-			{
-				var emote = "<a href='po:appendmsg/:%1:'>%2</a> ".args([ x, this.parseEmotes(":" + x + ":") ]);
-				emoteString += emote;
-				emoteList.push(emote);
-			}
-		}
 	},
 	
 	readFile: function(file)
@@ -690,12 +782,12 @@ Utilities =
 	
 	enrich: function(text)
 	{
-		if (!settings["enrichedText"])
+		if (!settings.enrichedText)
 		{
 			return text;
 		}
 		
-		//if (settings["fullwidth"])
+		//if (settings.fullwidth)
 		//{
 			text = text.replace(/(^|\s)＊(.+)＊($|\s)/g, "$1*$2*$3").replace(/(^|\s)＿(.+)＿($|\s)/g, "$1_$2_$3").replace(/(^|\s)／(.+)／($|\s)/g, "$1/$2/$3");
 		//}
@@ -717,7 +809,7 @@ Utilities =
 	
 	fullwidth: function(text)
 	{
-		if (!settings["fullwidth"])
+		if (!settings.fullwidth)
 			return text;
 			
 		var ret = text;
@@ -751,66 +843,11 @@ Utilities =
 		return text.replace(/\r/g, "").split("\n");
 	},
 	
-	parseEmotes: function(text, force)
-	{
-		if (!settings["emotes"] && !force)
-		{
-			return text;
-		}
-		
-		var ret = text;
-		
-		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？　]+)：/g, function(match)
-		{
-			var _match = Utilities.unfullwidth(match).toLowerCase();
-			
-			
-			if (this.checkEmote(_match))
-			{
-				return _match;
-			}
-			
-			return match;
-		});
-		
-		return ret.replace(/\:([a-zA-Z0-9\+\-_\.'\!\?\s]+)\:/g, function(emote)
-		{
-			var _emote = emote.substr(1, emote.length - 2).toLowerCase();
-			
-			if (_emote === "unown-a")
-			{
-				_emote = "unown";
-			}
-			
-			if (emotes.hasOwnProperty(_emote))
-			{
-				var data = emotes[_emote];
-				return "<img src='" + data + "'>";
-			}
-			else if (sys.pokeNum(_emote.replace(/_/g, " ")) > 0 || _emote === "missingno")
-			{
-				return "<img src='icon:" + sys.pokeNum(_emote.replace(/_/g, " ")) + "'>";
-			}
-			
-			return emote;
-		});
-	},
-	
-	emote: function(name)
-	{
-		return this.parseEmotes(":" + name + ":", true);
-	},
-	
-	checkEmote: function(name)
-	{
-		return emotes.hasOwnProperty(name);
-	},
-	
 	shortcuts: function(text)
 	{
 		var ret = text;
 		
-		var keys = settings["shortcuts"];
+		var keys = settings.shortcuts;
 		
 		for (var key in keys)
 		{
@@ -868,7 +905,7 @@ Utilities =
 		
 		var json = this.readFile(tiersPath);
 		
-		if (json === "")
+		if (!json)
 		{
 			printMessage("Couldn't load tiers!");
 			return;
@@ -888,7 +925,7 @@ Utilities =
 		
 		// is there any convenient way to parse xml?
 		
-		if (xml === "")
+		if (!xml)
 		{
 			printMessage("Couldn't fetch tiers!");
 			return;
@@ -907,7 +944,7 @@ Utilities =
 			
 			if (line.startsWith("<tier ")) // tier
 			{
-				var info = this.parseXML(line);
+				var info = this.parseXMLLine(line);
 				var name = info.name;
 				
 				for (var key in info)
@@ -931,16 +968,16 @@ Utilities =
 		printMessage("Tiers were successfully fetched and parsed!");
 	},
 	
-	parseXML: function(xml)
+	parseXMLLine: function(xml) // only does one line, can probably make it do more but w/e
 	{
 		var json = {};
 		
-		if (xml.startsWith("</") || xml === "")
+		if (!xml || xml.startsWith("</"))
 			return json;
 		
 		// <category name="VGC" displayOrder="-4">
 		
-		xml = xml.trim();
+		xml = xml.trim(); // we could instead count the spaces or tabs and use it to make a complete json object from an xml file, but is indent mandatory?
 		xml = xml.substr(xml.indexOf(" ") + 1);
 		
 		// now we can get individual vars by splitting spaces
@@ -965,7 +1002,7 @@ Utilities =
 		return json;
 	},
 	
-	link: function(text, linkData, linkCommand, style)
+	link: function(text, linkCommand, linkData, style)
 	{
 		if (linkCommand === undefined)
 		{
@@ -984,7 +1021,7 @@ Utilities =
 	
 	commandLink: function(text, command, linkCommand)
 	{
-		return this.link(text, "/" + command, linkCommand, settings["commandLinkStyle"]);
+		return this.link(text, linkCommand, "/" + command, settings.commandLinkStyle);
 	},
 	
 	printCommands: function(type)
@@ -993,7 +1030,7 @@ Utilities =
 
 		printMessage("<u><b>%1 Commands:</b></u>".args([ this.capitalize(type) ]));
 		
-		var cs = settings["commandSymbol"];
+		var cs = settings.commandSymbol;
 		
 		if (cmp(type, "all"))
 		{
@@ -1088,9 +1125,9 @@ Utilities =
 	
 	saveToLog: function(message, channel, isUserMessage)
 	{
-		if (settings["txtLogs"] === "txt" || settings["txtLogs"] === "both")
+		if (settings.txtLogs === "txt" || settings.txtLogs === "both")
 		{
-			var log = settings["logChannels"].indexOf(client.channelName(channel)) !== -1;
+			var log = settings.logChannels.indexOf(client.channelName(channel)) !== -1;
 			
 			if (!log)
 				return;
@@ -1104,12 +1141,12 @@ Utilities =
 			{
 				var m = message.substr(message.indexOf("<\/b>") + 5);
 				
-				if (cache["flash"])
+				if (cache.flash)
 				{
 					m = m.substr(0, m.length - 4); // get rid of </i> at the end of an italicized flash message
 				}
 				
-				if (settings["enrichedText"])
+				if (settings.enrichedText)
 					m = m.replace(/\<\/?b\>/g, "*").replace(/\<\/?i\>/g, "/").replace(/\<\/?u\>/g, "_");
 					
 				var text = this.plainText(message.substr(0, message.indexOf("<\/b>") + 5) + m);
@@ -1145,9 +1182,9 @@ Utilities =
 			sys.appendToFile(logPath + client.channelName(channel) + "/" + client.channelName(channel) + " " + date + ".txt", "(" + timestamp + ") " + text + "\r\n");
 		}
 		
-		if (settings["txtLogs"] === "html" || settings["txtLogs"] === "both")
+		if (settings.txtLogs === "html" || settings.txtLogs === "both")
 		{
-			var log = settings["logChannels"].indexOf(client.channelName(channel)) !== -1;
+			var log = settings.logChannels.indexOf(client.channelName(channel)) !== -1;
 			
 			var colour;
 			
@@ -1204,7 +1241,7 @@ Utilities =
 			
 		var colour = client.color(id);
 		var auth = client.auth(id);
-		var authSymbol = settings["authSymbols"][auth];
+		var authSymbol = settings.authSymbols[auth];
 		
 		var name = Utilities.escapeHTML(u);
 		var msg = m;
@@ -1212,28 +1249,28 @@ Utilities =
 		msg = Utilities.escapeHTML(msg);
 		msg = Utilities.fixLinks(msg);
 		msg = Utilities.enrich(msg);
-		msg = Utilities.parseEmotes(msg);
+		msg = Emotes.parse(msg);
 		
 		var _msg = msg;
 		
-		var stalkwords = settings["stalkwords"].slice(0);
+		var stalkwords = settings.stalkwords.copy();
 		stalkwords.push(client.ownName());
 		
 		for (var i = 0; i < stalkwords.length; i++)
 		{
 			msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s|\\!|\\?|\\.|\"|,|\\)|\\:|;)", "gi"), 
-				"$1<span style='background:%1'>$2</span><ping />$3".args([ settings["flashColour"] ]));
+				"$1<span style='background:%1'>$2</span><ping />$3".args([ settings.flashColour ]));
 		}
 		
 		var flash = msg !== _msg;
-		cache["flash"] = flash;
-		var ps = settings["paramSeparator"];
+		cache.flash = flash;
+		var ps = settings.paramSeparator;
 		
 		return "%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5<b>%3:</b>%6</a></font> %4%8"
 				.args
 				([ 
 					colour, // 1
-					Utilities.parseEmotes(authSymbol), // 2
+					Emotes.parse(authSymbol), // 2
 					name, // 3
 					msg, // 4
 					(auth > 0 ? "<i>" : ""), // 5
@@ -1251,37 +1288,68 @@ Utilities =
 	// utils
 });
 
+CustomCommands =
+({
+
+});
+
 
 Commands =
-({
+({	
+	add: function(type, name, params, desc, func, help)
+	{
+		var p = params.copy();
+		
+		if (p.length > 0)
+		{
+			for (var i = 0; i < p.length; i++)
+			{
+				p[i] = "[" + p[i] + "]"
+			}
+		}
+		
+		p = " " + p.join("((sep))");
+		
+		// p is a string now //
+		
+		var cmd = "[%1]%2%3 - %4".args([ type, name, p, desc ]);
+	
+		if (commands.indexOf(cmd) === -1)
+		{
+			commands.push(cmd);
+			
+			CustomCommands[name + "_help"] = help;
+			
+			CustomCommands[name + "_command"] = function(data)
+			{
+				try
+				{
+					func.call(globe, data);
+				}
+				catch (err)
+				{
+					printMessage(this[name + "_help"]);
+				}
+			};
+			
+			return true;
+		}
+		
+		return false;
+	},
+	
 	handleCommand: function(command, data, channel)
 	{
 		var params = (data === undefined ? 0 : data.length);
 		
-		for (var cmd in customCommands)
+		for (var x in CustomCommands)
 		{
-			if (customCommands.hasOwnProperty(cmd) && cmp("custom_" + command, cmd))
+			if (CustomCommands.hasOwnProperty(x) && cmp(command + "_command", x))
 			{
-				var cmdParams = (params > 0 ? data : "");
-				
-				if (params > 0)
-				{
-					for (var i = 0; i < cmdParams.length; i++)
-					{
-						if (isNaN(cmdParams[i]) && (!cmdParams[i].startsWith("\"") && !cmdParams[i].substr(cmdParams[i].length - 1, 1) !== "\""))
-							cmdParams[i] = "\"" + cmdParams[i] + "\"";
-					}
-					
-					cmdParams = cmdParams.join(",");
-				}
-				
-				eval(cmd + "(" + cmdParams + ")");
-				
+				CustomCommands[x](data); // calls func, help is inside of func so we dont need to check for it here
 				return;
 			}
 		}
-		
-		
 		
 		if (command === "commandslist")
 		{
@@ -1301,17 +1369,17 @@ Commands =
 		}
 		else if (command === "setcs" || command === "setcommandsymbol")
 		{
-			//printMessage(settings["commandSymbol"] + "	 " + data[0]);
+			//printMessage(settings.commandSymbol + "	 " + data[0]);
 			if (params === 0)
 			{
 				printMessage("Set your command symbol to what?");
 				return;
 			}
 			
-			settings["commandSymbol"] = data[0];
-			Utilities.saveSettings();
+			settings.commandSymbol = data[0];
+			Settings.save();
 			
-			printMessage("Your command symbol was changed to: <b>%1</b>".args([ settings["commandSymbol"] ]));
+			printMessage("Your command symbol was changed to: <b>%1</b>".args([ settings.commandSymbol ]));
 		}
 		else if (command === "setbotcolour" || command === "setbotcolor" || command === "setbc")
 		{
@@ -1321,8 +1389,8 @@ Commands =
 				return;
 			}
 			
-			settings["botColour"] = data[0];
-			Utilities.saveSettings();
+			settings.botColour = data[0];
+			Settings.save();
 			printMessage("Colour changed to <b><font color='%1'>%1</font></b>!".args([ data[0] ]));
 		}
 		else if (command === "setbotname" || command === "setbn")
@@ -1333,8 +1401,8 @@ Commands =
 				return;
 			}
 			
-			settings["botName"] = data[0];
-			Utilities.saveSettings();
+			settings.botName = data[0];
+			Settings.save();
 			printMessage("Call me %1!".args([ botHTML(false, false, false) ]));
 		}
 		else if (command === "setbotsymbol" || command == "setbs")
@@ -1345,8 +1413,8 @@ Commands =
 				return;
 			}
 			
-			settings["botSymbol"] = data[0];
-			Utilities.saveSettings();
+			settings.botSymbol = data[0];
+			Settings.save();
 			printMessage("Changed symbol to <b>%1</b>!".args([ data[0] ]));
 		}
 		else if (command === "changename")
@@ -1370,7 +1438,7 @@ Commands =
 			if (params === 1)
 			{
 				printMessage("Set it to what level auth? The command is %1setauthsymbol symbol%2level!"
-					.args([ settings["commandSymbol"], settings["paramSeparator"] ]));
+					.args([ settings.commandSymbol, settings.paramSeparator ]));
 				return;
 			}
 			
@@ -1382,8 +1450,8 @@ Commands =
 				return;
 			}
 			
-			settings["authSymbols"][level] = data[0].replace(/\(\(s\)\)/gi, " ");
-			Utilities.saveSettings();
+			settings.authSymbols[level] = data[0].replace(/\(\(s\)\)/gi, " ");
+			Settings.save();
 			printMessage("Symbol for %1-level auth changed to <b>%2</b>!".args([ level, data[0] ]));
 		}
 		else if (command === "clearauthsymbol" || command === "clearas")
@@ -1402,8 +1470,8 @@ Commands =
 				return;
 			}
 			
-			settings["authSymbols"][level] = "";
-			Utilities.saveSettings();
+			settings.authSymbols[level] = "";
+			Settings.save();
 			printMessage("Symbol for %1-level auth cleared!".args([ level ]));
 		}
 		else if (command === "randomno" || command === "random" || command === "randomint" || command ==="randomnumber")
@@ -1450,10 +1518,10 @@ Commands =
 				return;
 			}
 			
-			settings["emotes"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.emotes = cmp(data[0], "on");
+			Settings.save();
 			
-			printMessage("Emotes were turned %1".args([ (cmp(data[0], "on") ? Utilities.parseEmotes("on! :smiley:") : "off! :)") ]));
+			printMessage("Emotes were turned %1".args([ (cmp(data[0], "on") ? Emotes.parse("on! :smiley:") : "off! :)") ]));
 		}
 		else if (command === "addstalkword")
 		{
@@ -1463,7 +1531,7 @@ Commands =
 				return;
 			}
 			
-			var stalkwords = settings["stalkwords"];
+			var stalkwords = settings.stalkwords.copy();
 			
 			if (stalkwords.indexOf(data[0]) !== -1)
 			{
@@ -1472,8 +1540,8 @@ Commands =
 			}
 			
 			stalkwords.push(data[0]);
-			settings["stalkwords"] = stalkwords;
-			Utilities.saveSettings();
+			settings.stalkwords = stalkwords;
+			Settings.save();
 			
 			printMessage("%1 added to stalkwords!".args([ data[0] ]));
 		}
@@ -1485,7 +1553,7 @@ Commands =
 				return;
 			}
 			
-			var stalkwords = settings["stalkwords"];
+			var stalkwords = settings.stalkwords.copy();
 			
 			if (stalkwords.indexOf(data[0]) === -1)
 			{
@@ -1494,14 +1562,14 @@ Commands =
 			}
 			
 			stalkwords.splice(stalkwords.indexOf(data[0]), 1);
-			settings["stalkwords"] = stalkwords;
-			Utilities.saveSettings();
+			settings.stalkwords = stalkwords;
+			Settings.save();
 			
 			printMessage("%1 removed from stalkwords!".args([ data[0] ]));
 		}
 		else if (command === "stalkwords")
 		{
-			var stalkwords = settings["stalkwords"];
+			var stalkwords = settings.stalkwords.copy();
 			
 			print("<hr><br>%1 <b><u>Stalkwords:</u></b>".args([ botHTML() ]));
 			
@@ -1527,7 +1595,7 @@ Commands =
 				return;
 			}
 			
-			var friends = settings["friends"];
+			var friends = settings.friends.copy();
 			
 			if (friends.indexOf(data[0]) !== -1)
 			{
@@ -1536,8 +1604,8 @@ Commands =
 			}
 			
 			friends.push(data[0]);
-			settings["friends"] = friends;
-			Utilities.saveSettings();
+			settings.friends = friends;
+			Settings.save();
 			
 			printMessage("%1 was added to your friends list!".args([ data[0] ])); // i might word it difernt later is why args
 		}
@@ -1549,7 +1617,7 @@ Commands =
 				return;
 			}
 			
-			var friends = settings["friends"];
+			var friends = settings.friends.copy();
 			
 			if (friends.indexOf(data[0]) === -1)
 			{
@@ -1558,14 +1626,14 @@ Commands =
 			}
 			
 			friends.splice(friends.indexOf(data[0]), 1);
-			settings["friends"] = friends;
-			Utilities.saveSettings();
+			settings.friends = friends;
+			Settings.save();
 			
 			printMessage("%1 was removed from your friends list!".args([ data[0] ])); // i might word it difernt later is why args
 		}
 		else if (command === "friends")
 		{
-			var friends = settings["friends"];
+			var friends = settings.friends.copy();
 			
 			print("<hr><br>%1 <b><u>Friends:</u></b>".args([ botHTML() ]));
 			
@@ -1585,7 +1653,7 @@ Commands =
 		}
 		else if (command === "addlogchannel")
 		{
-			var chans = settings["logChannels"];
+			var chans = settings.logChannels.copy();
 			
 			if (chans.indexOf(data[0]) !== -1)
 			{
@@ -1601,14 +1669,14 @@ Commands =
 			
 			chans.push(data[0]);
 			
-			settings["logChannels"] = chans;
-			Utilities.saveSettings();
+			settings.logChannels = chans;
+			Settings.save();
 			
 			printMessage("%1 was added to your log channels!".args([ Utilities.channelNames()[Utilities.channelNames().indexOf(data[0])] ]));
 		}
 		else if (command === "removelogchannel")
 		{
-			var chans = settings["logChannels"];
+			var chans = settings.logChannels.copy();
 			
 			if (chans.indexOf(data[0]) === -1)
 			{
@@ -1618,14 +1686,14 @@ Commands =
 			
 			chans.splice(chans.indexOf(data[0]), 1);
 			
-			settings["logChannels"] = chans;
-			Utilities.saveSettings();
+			settings.logChannels = chans;
+			Settings.save();
 			
 			printMessage("%1 was removed from your log channels!".args([ Utilities.channelNames()[Utilities.channelNames().indexOf(data[0])] ]));
 		}
 		else if (command === "logchannels")
 		{
-			var chans = settings["logChannels"];
+			var chans = settings.logChannels.copy();
 			
 			print("<hr><br>%1 <b><u>Log Channels:</u></b>".args([ botHTML() ]));
 			
@@ -1647,13 +1715,13 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1addresponse keyphrase%2response".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
-				cache["responseAdded"] = false;
-				cache["responseError"] = "Wrong amount of params. There should be two!";
+				printMessage("It's %1addresponse keyphrase%2response".args([ settings.commandSymbol, settings.paramSeparator ]));
+				cache.responseAdded = false;
+				cache.responseError = "Wrong amount of params. There should be two!";
 				return;
 			}
 			
-			var responses = settings["responses"];
+			var responses = settings.responses;
 			
 			// responses are an array so that people can have multiple and it chooses at random, 
 			// so it requires an initialization as an array instead of just setting
@@ -1666,25 +1734,25 @@ Commands =
 			if (responses[data[0]].indexOf(data[1], true) !== -1) // perhaps don't do this check so they can manually choose the odds? eh.
 			{
 				printMessage("That's already one of your responses!");
-				cache["responseAdded"] = false;
-				cache["responseError"] = "That's already a response!";
+				cache.responseAdded = false;
+				cache.responseError = "That's already a response!";
 				return;
 			}
 			
 			if (cmp(data[0], data[1]))
 			{
 				printMessage("Response can't be the same as keyphrase!");
-				cache["responseAdded"] = false;
-				cache["responseError"] = "Response can't be the same as keyphrase!";
+				cache.responseAdded = false;
+				cache.responseError = "Response can't be the same as keyphrase!";
 				return;
 			}
 			
 			responses[data[0]].push(data[1]);
 			
-			settings["responses"] = responses;
-			Utilities.saveSettings();
+			settings.responses = responses;
+			Settings.save();
 			
-			cache["responseAdded"] = true;
+			cache.responseAdded = true;
 			
 			printMessage(data[1] + " was added to the responses for " + data[0] + "!");
 		}
@@ -1692,12 +1760,12 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1removeresponse keyphrase%2response".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
-				printMessage("If you're trying to remove the keyphrase entirely, use %1clearresponses keyphrase".args([ settings["commandSymbol"] ]));
+				printMessage("It's %1removeresponse keyphrase%2response".args([ settings.commandSymbol, settings.paramSeparator ]));
+				printMessage("If you're trying to remove the keyphrase entirely, use %1clearresponses keyphrase".args([ settings.commandSymbol ]));
 				return;
 			}
 			
-			var responses = settings["responses"];
+			var responses = settings.responses;
 			
 			if (!responses.hasOwnProperty(data[0]))
 			{
@@ -1724,8 +1792,8 @@ Commands =
 				delete responses[data[0]]; // remove keyphrase since empty
 			}
 			
-			settings["responses"] = responses;
-			Utilities.saveSettings();
+			settings.responses = responses;
+			Settings.save();
 			
 			printMessage("Response <code>%1</code> was removed from keyphrase <code>%2</code>".args([ data[1], data[0] ]));
 		}
@@ -1733,13 +1801,13 @@ Commands =
 		{
 			if (params !== 1)
 			{
-				printMessage("It's %1clearresponses keyphrase".args([ settings["commandSymbol"] ]));
+				printMessage("It's %1clearresponses keyphrase".args([ settings.commandSymbol ]));
 				printMessage("If you're only trying to remove only one response, use %1removeresponse keyphrase%2response "
-					.args([ settings["commandSymbol"], settings["paramSeparator"] ]));
+					.args([ settings.commandSymbol, settings.paramSeparator ]));
 				return;
 			}
 			
-			var responses = settings["responses"];
+			var responses = settings.responses;
 			
 			if (!responses.hasOwnProperty(data[0]))
 			{
@@ -1749,14 +1817,28 @@ Commands =
 			
 			delete responses[data[0]];
 			
-			settings["responses"] = responses;
-			Utilities.saveSettings();
+			settings.responses = responses;
+			Settings.save();
 			
 			printMessage("Keyphrase <code>%1</code> was cleared and deleted!".args([ data[0] ]));
 		}
 		else if (command === "responses")
 		{
-			var responses = settings["responses"];
+			if (params > 0)
+			{
+				if (!cmp(data[0], "on") && !cmp(data[0], "off"))
+				{
+					printMessage("%1 or %2?".args([ Utilities.commandLink("On", "responses on"), Utilities.commandLink("off", "responses off") ]));
+					return;
+				}
+			
+				settings.responsesOn = cmp(data[0], "on");
+				Settings.save();
+				printMessage("Autoresponse was turned %1!".args([ data[0].toLowerCase() ]));
+				return;
+			}
+			
+			var responses = settings.responses;
 			
 			print("<hr>");
 			printMessage("<b><u>Reponses:</u></b>");
@@ -1786,7 +1868,7 @@ Commands =
 				return;
 			}
 			
-			var blacklist = settings["responseBlacklist"];
+			var blacklist = settings.responseBlacklist.copy();
 			
 			if (blacklist.indexOf(data[0]) !== -1)
 			{
@@ -1803,8 +1885,8 @@ Commands =
 			var cc = Utilities.channelNames()[Utilities.channelNames().indexOf(data[0])];
 			
 			blacklist.push(cc);
-			settings["responseBlacklist"] = blacklist;
-			Utilities.saveSettings();
+			settings.responseBlacklist = blacklist;
+			Settings.save();
 		
 			printMessage(cc + " was added to your blacklist!");
 		}
@@ -1816,7 +1898,7 @@ Commands =
 				return;
 			}
 			
-			var blacklist = settings["responseBlacklist"];
+			var blacklist = settings.responseBlacklist.copy();
 			
 			if (blacklist.indexOf(data[0]) === -1)
 			{
@@ -1827,14 +1909,14 @@ Commands =
 			var cc = (Utilities.isChannel(data[0]) ? Utilities.channelNames()[Utilities.channelNames().indexOf(data[0])] : data[0]);
 			
 			blacklist.splice(blacklist.indexOf(cc), 1);
-			settings["responseBlacklist"] = blacklist;
-			Utilities.saveSettings();
+			settings.responseBlacklist = blacklist;
+			Settings.save();
 		
 			printMessage(cc + " was remooved from your blacklist! (I'm a cow :3)");
 		}
 		else if (command === "blacklist")
 		{
-			var blacklist = settings["responseBlacklist"];
+			var blacklist = settings.responseBlacklist.copy();
 			
 			print("<hr>");
 			printMessage("<b><u>Blacklist:</u></b>");
@@ -1861,8 +1943,8 @@ Commands =
 				return;
 			}
 			
-			settings["allowDefine"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.allowDefine = cmp(data[0], "on");
+			Settings.save();
 			printMessage("External defining was turned %1!".args([ data[0].toLowerCase() ]));
 		}
 		else if (command ==="lookup")
@@ -1896,12 +1978,12 @@ Commands =
 				+ "Tiers: %9" + "<br />"
 				+ "Actions: <a href='po:pm/%5' %11>PM</a>, <a href='po:info/%5' %11>Challenge</a>%10"
 					+ ", <a href='po:ignore/%5' %11>Toggle Ignore</a>, " 
-					+ (settings["friends"].indexOf(user) === -1 ? Utilities.commandLink("Add to friends", "addfriend " + user)
+					+ (settings.friends.indexOf(user) === -1 ? Utilities.commandLink("Add to friends", "addfriend " + user)
 						: Utilities.commandLink("Remove from friends", "removefriend " + user))
 				+ "</h4>")
 				.args([ botHTML(), user, avatar, client.color(id), id, client.auth(id), (client.isIgnored(id) ? "Yes" : "No"), htr, _tiers.join(", "),
-					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "'>Watch Battle</a>" : ""), 
-					"style='" + settings["commandLinkStyle"] + "'"]));
+					(Utilities.isPlayerBattling(id) ? ", <a href='po:watchplayer/" + id + "' style='" + settings.commandLinkStyle + "'>Watch Battle</a>" : ""), 
+					"style='" + settings.commandLinkStyle + "'"]));
 				
 			print("<hr>");
 		}
@@ -1923,7 +2005,7 @@ Commands =
 			
 			var html = Utilities.webCall(url + "ranked_stats.txt");
 			
-			if (html === "")
+			if (!html)
 			{
 				printMessage("Couldn't connect or there's no usage or something weird like that! Try again later or something!");
 				return;
@@ -1965,7 +2047,7 @@ Commands =
 				
 				var no = i + 1;
 				
-				pokes.push("#%1 - %2 %3 <small>%4% - %5 battles".args
+				pokes.push("#%1 - %2 %3 <small>%4% - %5 battles</small>".args
 					([
 						no,
 						"<img src='icon:" + sys.pokeNum(poke) + "'>",
@@ -2058,7 +2140,7 @@ Commands =
 		{
 			if (params === 0)
 			{
-				var colour = settings["flashColour"];
+				var colour = settings.flashColour;
 				printMessage("Your current flash colour is: <span style='background:%1'>%1</span>".args([ colour ]));
 				return;
 			}
@@ -2069,8 +2151,8 @@ Commands =
 				return;
 			}
 			
-			settings["flashColour"] = data[0];
-			Utilities.saveSettings();
+			settings.flashColour = data[0];
+			Settings.save();
 			
 			printMessage("Your flash/stalkword colour was changed to: <span style='background:%1'>%1</span>".args([ data[0] ]));
 		}
@@ -2082,8 +2164,8 @@ Commands =
 				return;
 			}
 			
-			settings["enrichedText"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.enrichedText = cmp(data[0], "on");
+			Settings.save();
 			printMessage("Enriched text was turned %1!".args([ data[0].toLowerCase() ]));
 		}
 		else if (command === "fullwidth")
@@ -2094,8 +2176,8 @@ Commands =
 				return;
 			}
 			
-			settings["fullwidth"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.fullwidth = cmp(data[0], "on");
+			Settings.save();
 			printMessage("Fullwidth text was turned %1!".args([ data[0].toLowerCase() ]));
 		}
 		else if (command === "ignorechallenges" || command === "ignorechals")
@@ -2106,8 +2188,8 @@ Commands =
 				return;
 			}
 			
-			settings["ignoreChallenges"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.ignoreChallenges = cmp(data[0], "on");
+			Settings.save();
 			
 			if (cmp(data[0], "on"))
 			{
@@ -2122,7 +2204,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1addshortcut phrase%2shortcut".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
+				printMessage("It's %1addshortcut phrase%2shortcut".args([ settings.commandSymbol, settings.paramSeparator ]));
 				return;
 			}
 			
@@ -2131,8 +2213,8 @@ Commands =
 				printMessage("Uh... no! Can't be the same!");
 			}
 			
-			settings["shortcuts"][data[0]] = data[1];
-			Utilities.saveSettings();
+			settings.shortcuts[data[0]] = data[1];
+			Settings.save();
 			printMessage("%1 will now be replaced automatically with %2!".args([ data[0], data[1] ]));
 		}
 		else if (command === "removeshortcut")
@@ -2143,7 +2225,7 @@ Commands =
 				return;
 			}
 			
-			var sc = settings["shortcuts"];
+			var sc = settings.shortcuts;
 			
 			if (!sc.hasOwnProperty(data[0]))
 			{
@@ -2152,7 +2234,7 @@ Commands =
 			}
 			
 			delete sc[data[0]];
-			Utilities.saveSettings();
+			Settings.save();
 			printMessage("%1 was removed from your shortcuts!".args([ data[0] ]));
 		}
 		else if (command === "shortcuts")
@@ -2161,7 +2243,7 @@ Commands =
 			printMessage("<b><u>Shortcuts:</u></b>");
 			
 			var hasSc = false;
-			var keys = settings["shortcuts"];
+			var keys = settings.shortcuts;
 			
 			for (var key in keys)
 			{
@@ -2199,6 +2281,7 @@ Commands =
 				"<b>%1 Pok&eacute;mon:</b> %2".args([ b, t.pokemons ]),
 				"<b>%1 Moves:</b> %2".args([ b, t.moves ]),
 				"<b>%1 Items:</b> %2".args([ b, t.items ]),
+				"<b>Gen:</b> " + t.gen,
 				"<b>Mode:</b> " + [ "Singles", "Doubles", "Triples" ][t.mode],
 				"<b>Clauses:</b> " + (t.hasOwnProperty("clauses") ? t.clauses.replace(/,/g, ", ") : "--"),
 				"<b>Max Level:</b> " + t.maxLevel,
@@ -2212,13 +2295,13 @@ Commands =
 		}
 		else if (command === "updateemotes")
 		{
-			Utilities.loadEmotes(true);
+			Emotes.load(true);
 		}
-		else if (command === "fakelog")
+		else if (command === "fakelog") // dont put this in commands its a secret lol
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1fakelog name%2message".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
+				printMessage("It's %1fakelog name%2message".args([ settings.commandSymbol, settings.paramSeparator ]));
 				return;
 			}
 			
@@ -2230,29 +2313,9 @@ Commands =
 				return;
 			}
 			
-			cache["fakingLog"] = true;
+			cache.fakingLog = true;
 			printUserMessage(data[1], client.name(id), channel);
-			cache["fakingLog"] = false;
-		}
-		else if (command === "makecommand")
-		{
-			if (params < 2)
-			{
-				printMessage("It's %1makecommand name%2function".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
-				return;
-			}
-			
-			customCommands["custom_" + data[0]] = data[1];
-			
-			var ret = eval("custom_" + data[0] + "=" + data[1]); // we do custom_ prefix to make sure none of our vars are overwritten
-			
-			if (ret !== undefined)
-			{
-				printMessage("<code><font color='blue'>%1</code></font> returns <code><font color='blue'>%2 - Command successfully created!</font></code>"
-					.args([ Utilities.escapeHTML(data[0]), Utilities.escapeHTML(ret.toString()) ]));
-			}
-			
-			Utilities.saveSettings();
+			cache.fakingLog = false;
 		}
 		else if (command === "setparamseparator" || command === "setseparator" || command === "setsep" || command === "setparamsep")
 		{
@@ -2279,8 +2342,8 @@ Commands =
 				return;
 			}
 			
-			settings["paramSeparator"] = data[0];
-			Utilities.saveSettings();
+			settings.paramSeparator = data[0];
+			Settings.save();
 			
 			printMessage("Your command parameter separator has been changed to: <b>%1</b>".args([ data[0] ]));
 		}
@@ -2304,7 +2367,7 @@ Commands =
 			
 			var html = Utilities.webCall("http://bulbapedia.bulbagarden.net/wiki/" + thing);
 			
-			if (html === "")
+			if (!html)
 			{
 				printMessage("Couldn't connect to Bulbapedia!");
 				return;
@@ -2335,8 +2398,8 @@ Commands =
 				return;
 			}
 			
-			settings["autoUpdate"] = cmp(data[0], "on");
-			Utilities.saveSettings();
+			settings.autoUpdate = cmp(data[0], "on");
+			Settings.save();
 			
 			printMessage((cmp(data[0], "on") ? "I'll check for updates when you log on!" : "I won't check for updates unless you tell me to!"));
 		}
@@ -2352,8 +2415,8 @@ Commands =
 				return;
 			}
 			
-			settings["commandLinkStyle"] = data[0];
-			Utilities.saveSettings();
+			settings.commandLinkStyle = data[0];
+			Settings.save();
 			
 			printMessage("Changed your " + Utilities.commandLink("command link", "commandslist") + " style!");
 		}
@@ -2367,8 +2430,8 @@ Commands =
 			
 			if (params === 1)
 			{
-				settings["logEvents"] = cmp(data[0], "on");
-				Utilities.saveSettings();
+				settings.logEvents = cmp(data[0], "on");
+				Settings.save();
 				
 				printMessage((cmp(data[0], "on") ? "Okay, I'll log it when people come and go!~" : "Alright, I won't log when people come or go."));
 			}
@@ -2382,12 +2445,12 @@ Commands =
 				
 				data[1] = Utilities.channelNames()[Utilities.channelNames().indexOf(data[1])]; // correct case
 				
-				var chans = settings["logEventChannels"];
+				var chans = settings.logEventChannels;
 				
 				chans[data[1]] = cmp(data[0], "on");
 				
-				settings["logEventChannels"] = chans;
-				Utilities.saveSettings();
+				settings.logEventChannels = chans;
+				Settings.save();
 				
 				printMessage((cmp(data[0], "on") ? "Okay, I'll log it when people come and go from " + data[1] + "!~"
 					: "Alright, I won't log when people come or go from " + data[1] + "."));
@@ -2406,8 +2469,8 @@ Commands =
 				return;
 			}
 			
-			settings["txtLogs"] = data[0].toLowerCase();
-			Utilities.saveSettings();
+			settings.txtLogs = data[0].toLowerCase();
+			Settings.save();
 			
 			printMessage((cmp(data[0], "txt") ? "Logs will be saved as *.txt files." : 
 				(cmp(data[0], "html") ? "Logs will be saved as *.html files." : "Logs will be saved as *.txt and *.html files.")));
@@ -2415,6 +2478,37 @@ Commands =
 		else if (command === "reconnect" || command === "rc")
 		{
 			client.reconnect();
+		}
+		else if (command === "pastebin" || command === "pb")
+		{
+			if (params === 0)
+			{
+				printMessage("Pastebin what?");
+				return;
+			}
+			
+			var url = "http://pastebin.com/api/api_post.php";
+			var key = "2fbef099f110f4e1d489a8ad386270ad";
+			var post = { "api_dev_key": key, "api_option": "paste", "api_paste_code": data[0] };
+			
+			if (params > 1)
+			{
+				post["api_paste_name"] = data[1];
+			}
+			
+			printMessage("Creating paste...");
+			
+			var url = Utilities.webCall(url, post);
+			
+			if (!url)
+			{
+				printMessage("Couldn't connect to Pastebin!");
+				return;
+			}
+			
+			print("<hr>");
+			print("<a href='%1'>%1</a> - %2".args([ url, Utilities.link("Send", "send", url, settings.commandLinkStyle) ]));
+			print("<hr>");
 		}
 		
 		
@@ -2439,12 +2533,12 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1setsetting [setting]%2[value]".args([ settings["commandSymbol"], settings["paramSeparator"] ]));
+				printMessage("It's %1setsetting [setting]%2[value]".args([ settings.commandSymbol, settings.paramSeparator ]));
 				return;
 			}
 			
 			settings[data[0]] = data[1];
-			Utilities.saveSettings();
+			Settings.save();
 			printMessage("%1's value was set to: <b>%2</b>".args([ data[0], data[1] ]));
 		}
 		else if (command === "clearsetting" || command === "deletesetting")
@@ -2456,7 +2550,7 @@ Commands =
 			}
 			
 			delete settings[data[0]];
-			Utilities.saveSettings();
+			Settings.save();
 			
 			printMessage("%1's value was cleared!".args([ data[0] ]));
 		}
@@ -2470,7 +2564,7 @@ Commands =
 		else
 		{
 			acceptCommand = false;
-			say("/" + command + (params > 0 ? " " + data.join(settings["paramSeparator"]) : ""));
+			say("/" + command + (params > 0 ? " " + data.join(settings.paramSeparator) : ""));
 		}
 	}
 	
@@ -2488,11 +2582,13 @@ PO =
 		
 		sys.stopEvent();
 		
-		var commandSymbol = settings["commandSymbol"];
+		var commandSymbol = settings.commandSymbol;
 		
 		if ((message.substr(0, commandSymbol.length) === commandSymbol || message.charAt(0) === "/") && acceptCommand)
 		{			
 			sys.stopEvent();
+			
+			message = message.replace(/\r/g, "").replace(/\n/g, "\\n"); // allows you to copy from notepad and things
 			
 			var pos = message.indexOf(" ");
 			var data;
@@ -2509,7 +2605,7 @@ PO =
 				{
 					var _data = message.substr(pos + 1);
 					
-					if (_data.indexOf(settings["paramSeparator"]) !== -1)
+					if (_data.indexOf(settings.paramSeparator) !== -1)
 					{
 						if (command === "setparamseparator" || command === "setseparator" || command === "setsep" || command === "setparamsep")
 						{
@@ -2517,7 +2613,7 @@ PO =
 						}
 						else
 						{
-							data = _data.split(settings["paramSeparator"]);
+							data = _data.split(settings.paramSeparator);
 						}
 					}
 					else
@@ -2569,34 +2665,35 @@ PO =
 		{
 			sys.stopEvent();
 			
-			if (!cache["fakingLog"])
+			if (!cache.fakingLog)
 				Utilities.saveToLog(Utilities.formatMessage(m, u), channel, true);
 				
 			printUserMessage(m, u, channel);
 			
-			if (settings["responses"].hasOwnProperty(m) && settings["responseBlacklist"].indexOf(client.channelName(channel)) === -1)
+			if (settings.responsesOn && settings.responses.hasOwnProperty(m)
+				&& settings.responseBlacklist.indexOf(client.channelName(channel)) === -1)
 			{
-				say(settings["responses"][m].randomItem());
+				say(settings.responses[m].randomItem());
 			}
 			
-			if (settings["allowDefine"] && m.toLowerCase().startsWith(client.ownName().toLowerCase() + "define "))
+			if (settings.allowDefine && m.toLowerCase().startsWith(client.ownName().toLowerCase() + "define "))
 			{
-				var mm = m.match(new RegExp(Utilities.escapeRegex(settings["paramSeparator"])));
+				var mm = m.match(new RegExp(Utilities.escapeRegex(settings.paramSeparator)));
 				if (mm === null || !mm.length === 1)
 				{
-					say("It's %1define keyphrase%2response!".args([ client.ownName(), settings["paramSeparator"] ]));
+					say("It's %1define keyphrase%2response!".args([ client.ownName(), settings.paramSeparator ]));
 				}
 				else
 				{
-					Commands.handleCommand("addresponse", m.substr(client.ownName().length + 7).split(settings["paramSeparator"]), channel);
+					Commands.handleCommand("addresponse", m.substr(client.ownName().length + 7).split(settings.paramSeparator), channel);
 					
-					if (cache["responseAdded"])
+					if (cache.responseAdded)
 					{
 						say("Added!");
 					}
 					else
 					{
-						say("Something went wrong: " + cache["responseError"]);
+						say("Something went wrong: " + cache.responseError);
 					}
 				}
 			}
@@ -2609,7 +2706,7 @@ PO =
 			init();
 		}
 		
-		var friends = settings["friends"];
+		var friends = settings.friends.copy();
 		
 		if (friends.indexOf(client.name(id)) !== -1)
 		{
@@ -2623,7 +2720,7 @@ PO =
 			init();
 		}
 		
-		var friends = settings["friends"];
+		var friends = settings.friends.copy();
 		
 		if (friends.indexOf(client.name(id)) !== -1)
 		{
@@ -2632,21 +2729,32 @@ PO =
 	},
 	onPlayerJoinChan: function(id, channel)
 	{
-		if (settings["logEvents"] || 
-			(settings["logEventChannels"].hasOwnProperty(client.channelName(channel)) && settings["logEventChannels"] !== {}
-			&& settings["logEventChannels"][client.channelName(channel)] === true))
+		if (!initCheck)
+		{
+			init();
+		}
+		
+		if (settings.logEvents || settings.logEventChannels[client.channelName(channel)])
 			Utilities.saveToLog(client.name(id) + " joined the channel.", channel);
     },
     onPlayerLeaveChan: function (id, channel)
 	{
-		if (settings["logEvents"] || 
-			(settings["logEventChannels"].hasOwnProperty(client.channelName(channel)) && settings["logEventChannels"] !== {}
-			&& settings["logEventChannels"][client.channelName(channel)] === true))
+		if (!initCheck)
+		{
+			init();
+		}
+		
+		if (settings.logEvents || settings.logEventChannels[client.channelName(channel)])
 			Utilities.saveToLog(client.name(id) + " left the channel.", channel);
     },
 	beforeChallengeReceived: function(challengeId, opponentId, tier, clauses)
 	{
-		if (settings["ignoreChallenges"])
+		if (!initCheck)
+		{
+			init();
+		}
+		
+		if (settings.ignoreChallenges)
 		{
 			sys.stopEvent();
 			// possibly alert, maybe not bc still spam
