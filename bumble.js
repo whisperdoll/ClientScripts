@@ -7,14 +7,15 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.5.0";
-var VERSIONNAME = "Sour as an Apple";
+var VERSION = "0.9.5.1";
+var VERSIONNAME = "Rotten as a Pear";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.5.0</h3>•Authstyles",
 	"•\"formattedMessage\" hook and cache.formattedMessage to go along with it, works like beforeUserMessage but can use html",
+	"<h3>0.9.5.1</h3>•Fixed up command thing so it can tell whether or not you're actually entering a command or just doing ~*~*~",
 	"",
 	"<b>If you haven't updated emotes recently, you should probably do that since the file is now alot smaller and things</b>"
 
@@ -474,6 +475,16 @@ String.prototype.trimString = function(str)
 	
 	return ret;
 };
+
+String.prototype.contains = function(str)
+{
+	return this.indexOf(str) !== -1;
+};
+
+Array.prototype.contains = function(item)
+{
+	return this.indexOf(item) !== -1;
+}
 
 
 
@@ -2776,8 +2787,11 @@ PO =
 		
 		var commandSymbol = settings.commandSymbol;
 		
-		if ((message.substr(0, commandSymbol.length) === commandSymbol || message.charAt(0) === "/") && acceptCommand)
-		{			
+		var isCommand = (message.startsWith(commandSymbol) && alphabet.contains(message[commandSymbol.length])) 
+			|| ((message.startsWith("/") || message.startsWith("!")) && alphabet.contains(message[1]));
+		
+		if (isCommand && acceptCommand)
+		{	
 			sys.stopEvent();
 			
 			message = message.replace(/\r/g, "").replace(/\n/g, "\\n"); // allows you to copy from notepad and things
