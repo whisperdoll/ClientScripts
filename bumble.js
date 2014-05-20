@@ -7,16 +7,15 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.6.0";
-var VERSIONNAME = "Pocket Monsters Online";
+var VERSION = "0.9.7.0";
+var VERSIONNAME = "4 Days Remain";
 
 var WHATSNEW =
 [
 
-	"<h3>0.9.6.0</h3>• General bug fixes",
-	"• Fixed the thing where you can flash yourself (thanks Yagura!)",
-	"• Added timer commands",
-	"• Internal stuff, giving more data to the formattedMessage hook etc"
+	"<h3>0.9.7.0</h3>• tiers command to check a Pokémon's tiers",
+	"• Links work in fullwidth",
+	"• Bot won't (shouldn't) be weird when you put html in commands"
 
 ].join("<br>");
 
@@ -205,6 +204,7 @@ String.prototype.args = function()
 function init()
 {
 	initCheck = true;
+	sys.unsetAllTimers();
 	
 	if (sys.isSafeScripts())
 	{
@@ -268,9 +268,14 @@ function print(message, channel, html)
 	client.printChannelMessage(message, channel, html);
 }
 
-function printMessage(message, channel)
+function printMessage(message, html, channel)
 {
-	print(botHTML() + " " + message, channel, true);
+	if (html === undefined)
+	{
+		html = true;
+	}
+	
+	print(botHTML() + " " + (html ? message : Utilities.escapeHTML(message)), channel, true);
 }
 
 function printUserMessage(m, u, channel)
@@ -304,7 +309,7 @@ function botHTML(timestamp, colon, symbol)
 		symbol = true;
 
 	return "<font color='" + settings.botColour + "'>" + (timestamp ? "<timestamp />" : "") + "<b>" + (symbol ? settings.botSymbol : "")
-		+ settings.botName + (colon ? ":" : "") + "</font></b>";
+		+ Utilities.escapeHTML(settings.botName) + (colon ? ":" : "") + "</font></b>";
 }
 
 function cmp(x1, x2)
@@ -496,7 +501,7 @@ Settings =
 				if (typeof(settings[key]) !== typeof(defaults[key]))
 				{
 					settings[key] = defaults[key];
-					printMessage(key + " was reset due to a type error! ...It's your fault!");
+					printMessage(key + " was reset due to a type error! ...It's your fault!", false);
 				}
 			}
 		}
@@ -531,18 +536,18 @@ Emotes =
 		{
 			// get emotes
 			
-			printMessage("Hang on, getting emotes... This could take a sec...");
+			printMessage("Hang on, getting emotes... This could take a sec...", false);
 			
 			var ejson = Utilities.webCall(emotesUrl);
 			
 			if (ejson.length < 1)
 			{
-				printMessage("There was a problem downloading emotes. Turning emotes off.");
+				printMessage("There was a problem downloading emotes. Turning emotes off.", false);
 				// turn off
 				return;
 			}
 			
-			printMessage("Got 'em! See your emotes with %1!".args(Utilities.commandLink(settings.commandSymbol + "emotes", "emotes")));
+			printMessage("Got 'em! See your emotes with %1!".args(Utilities.commandLink(settings.commandSymbol + "emotes", "emotes")), true);
 			
 			Utilities.writeFile(emotesPath, ejson);
 			emotes = JSON.parse(ejson);
@@ -654,16 +659,16 @@ Plugins =
 			try
 			{
 				eval(Utilities.readFile(pluginsPath + files[i]));
-				printMessage("Loaded plugin: " + files[i]);
+				printMessage("Loaded plugin: " + files[i], false);
 			}
 			catch (err)
 			{
-				printMessage("There was an error in loading plugin " + files[i] + "!");
-				printMessage("Error: " + err);
+				printMessage("There was an error in loading plugin " + files[i] + "!", false);
+				printMessage("Error: " + err, false);
 				
 				if (err.lineNumber)
 				{
-					printMessage("On line: " + err.lineNumber);
+					printMessage("On line: " + err.lineNumber, false);
 				}
 			}
 		}
@@ -873,7 +878,9 @@ Utilities =
 			var amp = "&am" + "p;";
 			var lt = "&l" + "t;";
 			var gt = "&g" + "t;";
-			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt);
+			var sq = "&#" + "39;";
+			var dq = "&quo" + "t;";
+			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt).replace(/'/g, sq).replace(/"/g, dq);
 		}
 		
 		return "";
@@ -886,7 +893,9 @@ Utilities =
 			var amp = "&";
 			var lt = "<";
 			var gt = ">";
-			return text.replace(/&amp;/g, amp).replace(/&lt;/g, lt).replace(/&gt;/g, gt);
+			var sq = "'";
+			var dq = "\"";
+			return text.replace(/&amp;/g, amp).replace(/&lt;/g, lt).replace(/&gt;/g, gt).replace(/&#39;/g, sq).replace(/&quot;/g, dq);
 		}
 	},
 	
@@ -897,7 +906,11 @@ Utilities =
 	
 	fixLinks: function(message)
 	{
-		return message.replace(/([a-zA-Z]+:\/\/|www\.)([^\s']+)/ig, "<a href='$1$2'>$1$2</a>");
+		return message.replace(/([a-zA-Z]+:\/\/|www\.)([^\s']+)/ig, "<a href='$1$2'>$1$2</a>")
+			.replace(/([ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ]+：／／|ｗｗｗ．)([^\s']+)/ig, function(match)
+			{
+				return "<a href='%1'>%2</a>".args(Utilities.unfullwidth(match), match);
+			});
 	},
 	
 	enrich: function(text)
@@ -1472,11 +1485,11 @@ Commands =
 			if (help !== undefined)
 				CustomCommands[name + "_help"] = help;
 			
-			CustomCommands[name + "_command"] = function(data)
+			CustomCommands[name + "_command"] = function(data, channel)
 			{
 				try
 				{
-					func.call(globe, data); // do call here since data is an array, otherwise it'll think data is multiple params
+					func.call(globe, data, channel); // do call here since data is an array, otherwise it'll think data is multiple params
 				}
 				catch (err)
 				{
@@ -1596,7 +1609,7 @@ Commands =
 		{
 			if (CustomCommands.hasOwnProperty(x) && cmp(command + "_command", x))
 			{
-				CustomCommands[x](data); // calls func, help is inside of func so we dont need to check for it here
+				CustomCommands[x](data, channel); // calls func, help is inside of func so we dont need to check for it here
 				return;
 			}
 		}
@@ -1629,7 +1642,7 @@ Commands =
 			settings.commandSymbol = data[0];
 			Settings.save();
 			
-			printMessage("Your command symbol was changed to: <b>%1</b>".args(settings.commandSymbol));
+			printMessage("Your command symbol was changed to: <b>%1</b>".args(Utilities.escapeHTML(settings.commandSymbol)));
 		}
 		else if (command === "setbotcolour" || command === "setbotcolor" || command === "setbc")
 		{
@@ -1665,7 +1678,7 @@ Commands =
 			
 			settings.botSymbol = data[0];
 			Settings.save();
-			printMessage("Changed symbol to <b>%1</b>!".args(data[0]));
+			printMessage("Changed symbol to <b>%1</b>!".args(Utilities.escapeHTML(data[0])));
 		}
 		else if (command === "changename")
 		{
@@ -1676,7 +1689,7 @@ Commands =
 			}
 			
 			client.changeName(data[0]);
-			printMessage("Changing name to %1...".args(data[0]));
+			printMessage("Changing name to %1...".args(data[0]), false);
 		}
 		else if (command === "setauthsymbol" || command === "setas")
 		{
@@ -1991,7 +2004,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1addresponse keyphrase%2response".args(settings.commandSymbol, settings.paramSeparator));
+				printMessage("It's %1addresponse keyphrase%2response".args(settings.commandSymbol, settings.paramSeparator), false);
 				cache.responseAdded = false;
 				cache.responseError = "Wrong amount of params. There should be two!";
 				return;
@@ -2030,14 +2043,14 @@ Commands =
 			
 			cache.responseAdded = true;
 			
-			printMessage(data[1] + " was added to the responses for " + data[0] + "!");
+			printMessage(data[1] + " was added to the responses for " + data[0] + "!", false);
 		}
 		else if (command === "removeresponse" || command === "deleteresponse")
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1removeresponse keyphrase%2response".args(settings.commandSymbol, settings.paramSeparator));
-				printMessage("If you're trying to remove the keyphrase entirely, use %1clearresponses keyphrase".args(settings.commandSymbol));
+				printMessage("It's %1removeresponse keyphrase%2response".args(settings.commandSymbol, settings.paramSeparator), false);
+				printMessage("If you're trying to remove the keyphrase entirely, use %1clearresponses keyphrase".args(settings.commandSymbol), false);
 				return;
 			}
 			
@@ -2059,7 +2072,7 @@ Commands =
 			}
 			else
 			{
-				printMessage("That's not even one of your responses for keyphrase <code>%1</code>!".args(data[0]));
+				printMessage("That's not even one of your responses for keyphrase <code>%1</code>!".args(Utilities.escapeHTML(data[0])));
 				return;
 			}
 			
@@ -2071,15 +2084,15 @@ Commands =
 			settings.responses = responses;
 			Settings.save();
 			
-			printMessage("Response <code>%1</code> was removed from keyphrase <code>%2</code>".args(data[1], data[0]));
+			printMessage("Response <code>%1</code> was removed from keyphrase <code>%2</code>".args(Utilities.escapeHTML(data[1]), Utilities.escapeHTML(data[0])));
 		}
 		else if (command === "clearresponses")
 		{
 			if (params !== 1)
 			{
-				printMessage("It's %1clearresponses keyphrase".args(settings.commandSymbol));
+				printMessage("It's %1clearresponses keyphrase".args(settings.commandSymbol), false);
 				printMessage("If you're only trying to remove only one response, use %1removeresponse keyphrase%2response "
-					.args(settings.commandSymbol, settings.paramSeparator));
+					.args(settings.commandSymbol, settings.paramSeparator), false);
 				return;
 			}
 			
@@ -2096,7 +2109,7 @@ Commands =
 			settings.responses = responses;
 			Settings.save();
 			
-			printMessage("Keyphrase <code>%1</code> was cleared and deleted!".args(data[0]));
+			printMessage("Keyphrase <code>%1</code> was cleared and deleted!".args(Utilities.escapeHTML(data[0])));
 		}
 		else if (command === "responses")
 		{
@@ -2164,7 +2177,7 @@ Commands =
 			settings.responseBlacklist = blacklist;
 			Settings.save();
 		
-			printMessage(cc + " was added to your blacklist!");
+			printMessage(cc + " was added to your blacklist!", false);
 		}
 		else if (command === "removeblacklist" || command === "deleteblacklist")
 		{
@@ -2188,7 +2201,7 @@ Commands =
 			settings.responseBlacklist = blacklist;
 			Settings.save();
 		
-			printMessage(cc + " was remooved from your blacklist! (I'm a cow :3)");
+			printMessage(cc + " was remooved from your blacklist! (I'm a cow :3)", false);
 		}
 		else if (command === "blacklist")
 		{
@@ -2423,7 +2436,7 @@ Commands =
 				return;
 			}
 			
-			if (!sys.validColor(data[0]))
+			if (!sys.validColor(data[0]) || Utilities.escapeHTML(data[0]) !== data[0])
 			{
 				printMessage("That's not a valid colour! Try \"#88EE88\" or \"gold\" or something!");
 				return;
@@ -2482,7 +2495,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1addshortcut phrase%2shortcut".args(settings.commandSymbol, settings.paramSeparator));
+				printMessage("It's %1addshortcut phrase%2shortcut".args(settings.commandSymbol, settings.paramSeparator), false);
 				return;
 			}
 			
@@ -2493,7 +2506,7 @@ Commands =
 			
 			settings.shortcuts[data[0]] = data[1];
 			Settings.save();
-			printMessage("%1 will now be replaced automatically with %2!".args(data[0], data[1]));
+			printMessage("%1 will now be replaced automatically with %2!".args(data[0], data[1]), false);
 		}
 		else if (command === "removeshortcut")
 		{
@@ -2513,7 +2526,7 @@ Commands =
 			
 			delete sc[data[0]];
 			Settings.save();
-			printMessage("%1 was removed from your shortcuts!".args(data[0]));
+			printMessage("%1 was removed from your shortcuts!".args(data[0]), false);
 		}
 		else if (command === "shortcuts")
 		{
@@ -2527,7 +2540,7 @@ Commands =
 			{
 				if (keys.hasOwnProperty(key))
 				{
-					printMessage("<b>%1</b> -> <b>%2</b>".args(key, keys[key]));
+					printMessage("<b>%1</b> -> <b>%2</b>".args(Utilities.escapeHTML(key), Utilities.escapeHTML(keys[key])));
 					hasSc = true;
 				}
 			}
@@ -2579,7 +2592,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1fakelog name%2message".args(settings.commandSymbol, settings.paramSeparator));
+				printMessage("It's %1fakelog name%2message".args(settings.commandSymbol, settings.paramSeparator), false);
 				return;
 			}
 			
@@ -2623,7 +2636,7 @@ Commands =
 			settings.paramSeparator = data[0];
 			Settings.save();
 			
-			printMessage("Your command parameter separator has been changed to: <b>%1</b>".args(data[0]));
+			printMessage("Your command parameter separator has been changed to: <b>%1</b>".args(Utilities.escapeHTML(data[0])));
 		}
 		else if (command === "updatetiers")
 		{
@@ -2656,7 +2669,7 @@ Commands =
 			
 			if (ind === -1)
 			{
-				printMessage("There's no trivia on that! " + "http://bulbapedia.bulbagarden.net/wiki/" + thing);
+				printMessage("There's no trivia on that!");
 				return;
 			}
 			
@@ -2731,7 +2744,7 @@ Commands =
 				Settings.save();
 				
 				printMessage((cmp(data[0], "on") ? "Okay, I'll log it when people come and go from " + data[1] + "!~"
-					: "Alright, I won't log when people come or go from " + data[1] + "."));
+					: "Alright, I won't log when people come or go from " + data[1] + "."), false);
 			}
 		}
 		else if (command === "txtlogs")
@@ -2792,7 +2805,7 @@ Commands =
 		{
 			if (params < 2)
 			{
-				printMessage("It's %1settimer name%2seconds%2message".args(settings["commandSymbol"], settings["paramSeparator"]));
+				printMessage("It's %1settimer name%2seconds%2message".args(settings["commandSymbol"], settings["paramSeparator"]), false);
 				return;
 			}
 			
@@ -2835,7 +2848,7 @@ Commands =
 				if (timers.hasOwnProperty(timer) && cmp(timer, data[0]))
 				{
 					sys.unsetTimer(timers[timer].timer);
-					printMessage("Timer %1 was unset!".args(timer));
+					printMessage("Timer %1 was unset!".args(timer), false);
 					delete timers[timer];
 					isT = true;
 				}
@@ -2862,7 +2875,7 @@ Commands =
 				if (timers.hasOwnProperty(timer))
 				{
 					var diff = Math.floor(timers[timer].duration - (rn.getTime() - timers[timer].time.getTime()) / 1000); // prob a better way but eh
-					printMessage("%1 - %2".args(timer, Utilities.formatTime(diff, true) + " remaining"));
+					printMessage("%1 - %2".args(timer, Utilities.formatTime(diff, true) + " remaining"), false);
 					isTimer = true;
 				}
 			}
@@ -2873,6 +2886,55 @@ Commands =
 			}
 			
 			print("<hr>");
+		}
+		else if (command === "tiers")
+		{
+			if (params === 0)
+			{
+				printMessage("Tiers for what?");
+				return;
+			}
+			
+			if (sys.pokeNum(data[0]) === undefined)
+			{
+				printMessage("That isn't a Pokémon!");
+				return;
+			}
+			
+			var pokeTiers = [];
+			var tierOrder = [ "Ubers", "OU", "UU", "LU", "NU", "NEU" ];
+			var tierList = client.getTierList();
+			
+			for (var tier in tiers)
+			{
+				if (tiers.hasOwnProperty(tier))
+				{
+					var t = tiers[tier];
+					
+					if (t.banMode === "Eligable" && (" " + t.pokemons + ",").contains(" " + data[0] + ","))
+					{
+						pokeTiers.push(tier);
+					}
+					else
+					{
+						if (!tier.contains(" ") || !(" " + t.pokemons + ",").contains(" " + data[0] + ","))
+						{
+							continue;
+						}
+						
+						var root = tier.split(" ")[0];
+						var type = tier.substr(tier.indexOf(" ") + 1);
+						
+						if (tierOrder.contains(type) && !cmp(type, "neu") && !cmp(type, "ubers")
+							&& tierList.contains(root + " " + tierOrder[tierOrder.indexOf(type) + 1]))
+						{
+							pokeTiers.push(root + " " + tierOrder[tierOrder.indexOf(type) - 1]);
+						}
+					}
+				}
+			}
+				
+			printMessage(sys.pokemon(sys.pokeNum(data[0])) + "'s tiers: " + (pokeTiers.length > 0 ? pokeTiers.join(", ") : "Unknown"), false);
 		}
 		
 		
@@ -3092,7 +3154,7 @@ PO =
 		
 		if (friends.indexOf(client.name(id)) !== -1)
 		{
-			printMessage("%1 is <b><font color='green'>online!</font></b><ping />".args(client.name(id)));
+			printMessage("%1 is <b><font color='green'>online!</font></b><ping />".args(Utilities.escapeHTML(client.name(id))));
 		}
 	},
 	onPlayerRemoved: function(id)
@@ -3108,7 +3170,7 @@ PO =
 		
 		if (friends.indexOf(client.name(id)) !== -1)
 		{
-			printMessage("%1 went <b><font color='red'>offline!</font></b><ping />".args(client.name(id)));
+			printMessage("%1 went <b><font color='red'>offline!</font></b><ping />".args(Utilities.escapeHTML(client.name(id))));
 		}
 	},
 	onPlayerJoinChan: function(id, channel)
