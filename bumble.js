@@ -16,7 +16,7 @@ var WHATSNEW =
 	"<h3>0.9.7.0</h3>• tiers command to check a Pokémon's tiers",
 	"• Links work in fullwidth",
 	"• Bot won't (shouldn't) be weird when you put html in commands",
-	"<h3>0.9.7.1</h3?• Channel links work now",
+	"<h3>0.9.7.1</h3>• Channel links work now",
 	"• beforeNewMessage hook added",
 	"• tiers command added to the commandslist, i'm bad at adding commands to the list"
 
