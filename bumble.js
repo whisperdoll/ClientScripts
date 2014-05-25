@@ -7,15 +7,18 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.0";
-var VERSIONNAME = "4 Days Remain";
+var VERSION = "0.9.7.1";
+var VERSIONNAME = "1.5 Days Remain";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.7.0</h3>• tiers command to check a Pokémon's tiers",
 	"• Links work in fullwidth",
-	"• Bot won't (shouldn't) be weird when you put html in commands"
+	"• Bot won't (shouldn't) be weird when you put html in commands",
+	"<h3>0.9.7.1</h3?• Channel links work now",
+	"• beforeNewMessage hook added",
+	"• tiers command added to the commandslist, i'm bad at adding commands to the list"
 
 ].join("<br>");
 
@@ -120,6 +123,7 @@ var commands =
 	"[general]emotes [on/off] - Enables/disables emotes",
 	"[general]ignorechallenges [on/off] - Enables or disables auto-ignored challenges",
 	"[general]tier [tier] - Gives information on [tier]",
+	"[general]tiers [pokemon] - Lists <b>some</b> tiers that [pokemon] is in",
 	"[general]usage [tier] - Gives top 50 used Pok&eacute;mon in [tier]",
 	"[general]usage [tier]((sep))[amt] - Gives top [amt] used Pok&eacute;mon in [tier]",
 	"[general]whatsnew - Displays the What's New? message for your current version",
@@ -910,6 +914,21 @@ Utilities =
 			.replace(/([ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ]+：／／|ｗｗｗ．)([^\s']+)/ig, function(match)
 			{
 				return "<a href='%1'>%2</a>".args(Utilities.unfullwidth(match), match);
+			})
+			.replace(/#(.+)/g, function(match)
+			{
+				var test = match.substr(1);
+				var ret = match;
+				
+				for (var i = 1; i <= test.length; i++)
+				{
+					if (Utilities.isChannel(test.substr(0, i)))
+					{
+						ret = "<a href='po:join/%1'>#%1</a>%2".args(test.substr(0, i), test.substr(i));
+					}
+				}
+				
+				return ret;
 			});
 	},
 	
@@ -940,9 +959,12 @@ Utilities =
 		return ret;
 	},
 	
-	fullwidth: function(text)
+	fullwidth: function(text, force)
 	{
-		if (!settings.fullwidth)
+		if (force === undefined)
+			force = false;
+			
+		if (!settings.fullwidth && !force)
 			return text;
 			
 		var ret = text;
@@ -1444,6 +1466,17 @@ Utilities =
 		}
 		
 		return t;
+	},
+	multiplyString: function(str, amt)
+	{
+		var ret = "";
+		
+		for (var i = 0; i < amt; i++)
+		{
+			ret += str;
+		}
+		
+		return ret;
 	}
 	
 	
@@ -3211,6 +3244,10 @@ PO =
 			sys.stopEvent();
 			// possibly alert, maybe not bc still spam
 		}
+	},
+	beforeNewMessage: function(message, html)
+	{
+		Plugins.callHooks("beforeNewMessage", { "message": message, "html": html });
 	}
 });
 
