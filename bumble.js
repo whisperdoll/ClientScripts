@@ -7,18 +7,14 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.1";
-var VERSIONNAME = "1.5 Days Remain";
+var VERSION = "0.9.7.3";
+var VERSIONNAME = "Negative Days Remain";
 
 var WHATSNEW =
 [
 
-	"<h3>0.9.7.0</h3>• tiers command to check a Pokémon's tiers",
-	"• Links work in fullwidth",
-	"• Bot won't (shouldn't) be weird when you put html in commands",
-	"<h3>0.9.7.1</h3>• Channel links work now",
-	"• beforeNewMessage hook added",
-	"• tiers command added to the commandslist, i'm bad at adding commands to the list"
+	"<h3>0.9.7.3</h3>• Fixed BUGES",
+	"• Made things clicky with /tier and stuff"
 
 ].join("<br>");
 
@@ -348,6 +344,18 @@ Array.prototype.indexOf = function (item, caseSensitive)
 	}
 
 	return -1;
+};
+
+Array.prototype.format = function(fn)
+{
+	var ret = [];
+	
+	for (var i = 0; i < this.length; i++)
+	{
+		ret.push(eval('"' + fn.replace(/%i/g, this[i]) + '"'));
+	}
+	
+	return ret;
 };
 
 Array.prototype.copy = function()
@@ -882,9 +890,7 @@ Utilities =
 			var amp = "&am" + "p;";
 			var lt = "&l" + "t;";
 			var gt = "&g" + "t;";
-			var sq = "&#" + "39;";
-			var dq = "&quo" + "t;";
-			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt).replace(/'/g, sq).replace(/"/g, dq);
+			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt);
 		}
 		
 		return "";
@@ -897,9 +903,7 @@ Utilities =
 			var amp = "&";
 			var lt = "<";
 			var gt = ">";
-			var sq = "'";
-			var dq = "\"";
-			return text.replace(/&amp;/g, amp).replace(/&lt;/g, lt).replace(/&gt;/g, gt).replace(/&#39;/g, sq).replace(/&quot;/g, dq);
+			return text.replace(/&amp;/g, amp).replace(/&lt;/g, lt).replace(/&gt;/g, gt);
 		}
 	},
 	
@@ -916,7 +920,7 @@ Utilities =
 				return "<a href='%1'>%2</a>".args(Utilities.unfullwidth(match), match);
 			})
 			.replace(/#(.+)/g, function(match)
-			{
+			{					
 				var test = match.substr(1);
 				var ret = match;
 				
@@ -1055,7 +1059,10 @@ Utilities =
 		
 		if (!sys.fileExists(tiersPath) || force)
 		{
-			this.getTiers();
+			if (!this.getTiers())
+			{
+				return false;
+			}
 		}
 		
 		var json = this.readFile(tiersPath);
@@ -1063,10 +1070,11 @@ Utilities =
 		if (!json)
 		{
 			printMessage("Couldn't load tiers!");
-			return;
+			return false;
 		}
 		
 		tiers = JSON.parse(json);
+		return true;
 	},
 	
 	getTiers: function()
@@ -1083,7 +1091,7 @@ Utilities =
 		if (!xml)
 		{
 			printMessage("Couldn't fetch tiers!");
-			return;
+			return false;
 		}
 		
 		xml = this.splitLines(xml);
@@ -1121,6 +1129,7 @@ Utilities =
 		this.writeFile(tiersPath, JSON.stringify(json));
 		
 		printMessage("Tiers were successfully fetched and parsed!");
+		return true;
 	},
 	
 	parseXMLLine: function(xml) // only does one line, can probably make it do more but w/e
@@ -1963,7 +1972,8 @@ Commands =
 			{
 				for (var i = 0; i < friends.length; i++)
 				{
-					printMessage(Utilities.escapeHTML(friends[i]));
+					var online = client.id(friends[i]) !== -1;
+					printMessage("%1 - <b><font color='%2'>%3</font>".args(Utilities.escapeHTML(friends[i]), (online ? "green" : "red"), (online ? "Online" : "Offline")));
 				}
 			}
 			else
@@ -2315,7 +2325,7 @@ Commands =
 			
 			if (params === 0 || tierList.indexOf(data[0]) === -1)
 			{
-				printMessage("Tiers: " + tierList.join(", "));
+				printMessage("Which tier? Valid tiers are: " + tierList.format("<a href='po:send//usage %i'>%i</a>").join(", "));
 				return;
 			}
 			
@@ -2587,11 +2597,19 @@ Commands =
 		}
 		else if (command === "tier")
 		{
+			if (tiers === {})
+			{
+				if (!Utilities.loadTiers(true))
+				{
+					return;
+				}
+			}
+			
 			var tierList = client.getTierList();
 			
 			if (params === 0 || tierList.indexOf(data[0]) === -1)
 			{
-				printMessage("Which tier? Valid tiers are: " + tierList.join(", ")); // TODO: make these clickable
+				printMessage("Which tier? Valid tiers are: " + tierList.format("<a href='po:send//tier %i'>%i</a>").join(", "));
 				return;
 			}
 			
@@ -2602,9 +2620,9 @@ Commands =
 			
 			var info = 
 			[
-				"<b>%1 Pok&eacute;mon:</b> %2".args(b, t.pokemons),
-				"<b>%1 Moves:</b> %2".args(b, t.moves),
-				"<b>%1 Items:</b> %2".args(b, t.items),
+				"<b>%1 Pok&eacute;mon:</b> %2".args(b, t.pokemons.split(", ").format("<a href='po:send//pokemon %i'>%i</a>").join(", ")),
+				"<b>%1 Moves:</b> %2".args(b, t.moves.split(", ").format("<a href='po:send//move %i'>%i</a>").join(", ")),
+				"<b>%1 Items:</b> %2".args(b, t.items.split(", ").format("<a href='po:send//item %i'>%i</a>").join(", ")),
 				"<b>Gen:</b> " + t.gen,
 				"<b>Mode:</b> " + [ "Singles", "Doubles", "Triples" ][t.mode],
 				"<b>Clauses:</b> " + (t.hasOwnProperty("clauses") ? t.clauses.replace(/,/g, ", ") : "--"),
