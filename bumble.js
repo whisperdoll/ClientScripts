@@ -7,14 +7,15 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.3";
-var VERSIONNAME = "Negative Days Remain";
+var VERSION = "0.9.7.4";
+var VERSIONNAME = "80-odd Days Remain";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.7.3</h3>• Fixed BUGES",
-	"• Made things clicky with /tier and stuff"
+	"• Made things clicky with /tier and stuff",
+	"<h3>0.9.7.4</h3>• Overactive protection for when script speaks for you (like autoresponse)"
 
 ].join("<br>");
 
@@ -30,6 +31,9 @@ var celebiPic = "<img title=':3' src='data:image/png;base64,iVBORw0KGgoAAAANSUhE
 
 var acceptCommand = true;
 var stopSay = true;
+
+var oaCounter = 0;
+var oaTimer = undefined;
 
 var initCheck = false;
 var emotesCheck = false;
@@ -87,6 +91,8 @@ var defaults =
 	"allowDefine": false,
 	"responsesOn": true,
 	"cleanSettings": true,
+	"overactiveLimit": 40,
+	"overactiveSeconds": 40,
 	"version": VERSION
 };
 
@@ -291,12 +297,28 @@ function printUserMessage(m, u, channel)
 
 function say(message, channel)
 {
-	if (channel === undefined)
+	if (oaTimer === undefined)
 	{
-		channel = client.currentChannel();
+		oaTimer = sys.setTimer(function() { oaCounter = 0; oaTimer = undefined; }, settings.overactiveSeconds, false);
 	}
+	
 
-	network.sendChanMessage(channel, message);
+	if (oaCounter < settings.overactiveLimit)
+	{
+		oaCounter++;
+		
+		if (channel === undefined)
+		{
+			channel = client.currentChannel();
+		}
+
+		network.sendChanMessage(channel, message);
+	}
+	else if (oaCounter == settings.overactiveLimit)
+	{
+		printMessage("Ooh, saved you! You almost passed your overactive limit!");
+		oaCounter++;
+	}
 }
 
 function botHTML(timestamp, colon, symbol)
@@ -1908,7 +1930,7 @@ Commands =
 			{
 				for (var i = 0; i < stalkwords.length; i++)
 				{
-					printMessage(stalkwords[i]);
+					printMessage(Utilities.commandLink("(Remove)", "removestalkword " + stalkwords[i]) + " " + stalkwords[i]);
 				}
 			}
 			else
@@ -1973,7 +1995,8 @@ Commands =
 				for (var i = 0; i < friends.length; i++)
 				{
 					var online = client.id(friends[i]) !== -1;
-					printMessage("%1 - <b><font color='%2'>%3</font>".args(Utilities.escapeHTML(friends[i]), (online ? "green" : "red"), (online ? "Online" : "Offline")));
+					printMessage("%4 <b><font color='%2'>[%3]</font></b> %1".args(Utilities.escapeHTML(friends[i]), (online ? "green" : "red"), 
+					(online ? "Online" : "Offline"), Utilities.commandLink("(Remove)", "removefriend " + friends[i])));
 				}
 			}
 			else
@@ -2033,7 +2056,7 @@ Commands =
 			{
 				for (var i = 0; i < chans.length; i++)
 				{
-					printMessage(Utilities.escapeHTML(chans[i]));
+					printMessage(Utilities.commandLink("(Remove)", "removelogchannel " + chans[i]) + " " + Utilities.escapeHTML(chans[i]));
 				}
 			}
 			else
@@ -2257,7 +2280,7 @@ Commands =
 			{
 				for (var i = 0; i < blacklist.length; i++)
 				{
-					printMessage(Utilities.escapeHTML(blacklist[i]));
+					printMessage(Utilities.commandLink("(Remove)", "removeblacklist " + blacklist[i]) + " " + Utilities.escapeHTML(blacklist[i]));
 				}
 			}
 			else
@@ -2926,7 +2949,7 @@ Commands =
 				if (timers.hasOwnProperty(timer))
 				{
 					var diff = Math.floor(timers[timer].duration - (rn.getTime() - timers[timer].time.getTime()) / 1000); // prob a better way but eh
-					printMessage("%1 - %2".args(timer, Utilities.formatTime(diff, true) + " remaining"), false);
+					printMessage("%1 %2 - %3".args(Utilities.commandLink("(Unset)", "unsettimer " + timer) + " " + timer, Utilities.formatTime(diff, true) + " remaining"), false);
 					isTimer = true;
 				}
 			}
