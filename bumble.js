@@ -7,15 +7,39 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.4";
-var VERSIONNAME = "80-odd Days Remain";
+// pup //
+
+/*
+   !-------------!
+   !   credits   !
+   !-------------!
+   ! ~ ~ ~ ~ ~ ~ !
+   !-------------!
+   !  wardrober  !
+   !-------------!
+   !     pup     !
+   !     uso     !
+   ! vnistelrooy !
+   !-------------!
+   ! ~ ~ ~ ~ ~ ~ !
+   !-------------!
+   !  directors  !
+   !-------------!
+   !  songysing  !
+   !-------------!
+*/
+
+var VERSION = "0.9.7.5";
+var VERSIONNAME = "What's a Day from a Night?";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.7.3</h3>• Fixed BUGES",
 	"• Made things clicky with /tier and stuff",
-	"<h3>0.9.7.4</h3>• Overactive protection for when script speaks for you (like autoresponse)"
+	"<h3>0.9.7.4</h3>• Overactive protection for when script speaks for you (like autoresponse)",
+	"<h3>0.9.7.5</h3>• Enable/disable flashes, reset settings, fix buges, internal things",
+	"• Will now show multiple spaces"
 
 ].join("<br>");
 
@@ -74,7 +98,8 @@ var defaults =
 	},
 	"enrichedText": true,
 	"emotes": true,
-	"flashColour": "gold",
+	"flashColour": "gold", // dr gold
+	"flashes": true,
 	"stalkwords": [],
 	"friends": [],
 	"fullwidth": false,
@@ -105,7 +130,7 @@ var pluginsPath = "Bumble Plugins/";
 var scriptUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/bumble.js";
 var emotesUrl = "https://raw.githubusercontent.com/SongSing/ClientScripts/master/Emotes.json";
 
-// commands - don't need to be in order by type, i just think it makes the code look nicer :3 //
+// commands - don't need to be in order by type (ordered automatically in Commands.print), i just think it makes the code look nicer :3 //
 // format: [type]commandname [param]((sep))[param] - description //
 
 var commands =
@@ -163,6 +188,7 @@ var commands =
 	"[settings]setauthsymbol [symbol]((sep))[level] - Changes symbol used to denote [level]-level auth. [level] is an integer from 0 to 4",
 	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
 	"[settings]setauthstyle [style]((sep))[level] - Changes style used to denote [level]-level auth. [style] should be opening HTML tags (&lt;b&gt;&lt;i&gt;)",
+	"[settings]flashes [on/off] - Enables or disables flashes",
 	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	"[settings]setseparator [separator] - Sets the command parameter separator to [separator]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
@@ -172,10 +198,10 @@ var commands =
 	"[settings]txtlogs [txt/html/both] - When txt, saves logs as text; when html, saves them as HTML (which takes up more space, but arguably looks nicer); when both, saves them as both",
 	"[settings]settings - Shows list of script settings",
 	"[settings]setsetting [setting]((sep))[value] - Sets [settings]'s value to [value] <b><font color='red'>IF YOU BREAK SCRIPTS WITH THIS IT'S YOUR FAULT</font></b>",
-	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default"
+	"[settings]clearsetting [setting] - Clears [setting]'s value — can be used to reset script settings to their default",
+	"[secret]letsgetmarried [y/n] - Not a real command, but I think I'm in love with you..."
 
 ];
-
 
 /*String.prototype.args = function(arg)
 {	
@@ -274,6 +300,11 @@ function print(message, channel, html)
 	client.printChannelMessage(message, channel, html);
 }
 
+function printAll(message)
+{
+	client.printLine(message);
+}
+
 function printMessage(message, html, channel)
 {
 	if (html === undefined)
@@ -314,7 +345,7 @@ function say(message, channel)
 
 		network.sendChanMessage(channel, message);
 	}
-	else if (oaCounter == settings.overactiveLimit)
+	else if (oaCounter == settings.overactiveLimit) // i think i had reason for == but i cant remember :0
 	{
 		printMessage("Ooh, saved you! You almost passed your overactive limit!");
 		oaCounter++;
@@ -368,13 +399,23 @@ Array.prototype.indexOf = function (item, caseSensitive)
 	return -1;
 };
 
-Array.prototype.format = function(fn)
+Array.prototype.format = function(fn, num)
 {
 	var ret = [];
 	
+	if (!num)
+	{
+		num = false;
+	}
+		
 	for (var i = 0; i < this.length; i++)
 	{
-		ret.push(eval('"' + fn.replace(/%i/g, this[i]) + '"'));
+		var formatted = eval('"' + fn.replace(/%i/g, this[i]) + '"'); // quotes or it thinks its a var hahas
+		
+		if (num)
+			formatted = parseFloat(num);
+			
+		ret.push(formatted);
 	}
 	
 	return ret;
@@ -397,17 +438,34 @@ Array.prototype.randomItem = function()
 
 Array.prototype.clean = function(deleteValue)
 {
-	var ret = this.copy();
-	for (var i = 0; i < ret.length; i++)
+	if (deleteValue)
 	{
-		if (ret[i] == deleteValue)
-		{         
-			ret.splice(i, 1);
-			i--;
+		var ret = this.copy();
+		for (var i = 0; i < ret.length; i++)
+		{
+			if (ret[i] == deleteValue)
+			{         
+				ret.splice(i, 1);
+				i--;
+			}
 		}
+		
+		return ret;
 	}
-	
-	return ret;
+	else
+	{
+		var ret = this.copy();
+		for (var i = 0; i < ret.length; i++)
+		{
+			if (!ret[i])
+			{
+				ret.splice(i, 1);
+				i--;
+			}
+		}
+		
+		return ret;
+	}
 };
 
 Array.prototype.reverse = function()
@@ -432,7 +490,9 @@ String.prototype.indexOf = function(str)
 	for (var i = 0; i < this.length; i++)
 	{
 		if (cmp(this.substr(i, str.length), str))
+		{
 			return i;
+		}
 	}
 
 	return -1;
@@ -577,7 +637,7 @@ Emotes =
 			if (ejson.length < 1)
 			{
 				printMessage("There was a problem downloading emotes. Turning emotes off.", false);
-				// turn off
+				settings.emotes = false; // lol this was not here for several month just comment say "turn off" im rly bad
 				return;
 			}
 			
@@ -849,7 +909,7 @@ Utilities =
 	
 	isChannel: function(name)
 	{
-		return this.channelNames().indexOf(name) !== -1;
+		return this.channelNames().contains(name);
 	},
 	
 	readFile: function(file)
@@ -1373,50 +1433,58 @@ Utilities =
 		var msg = m;
 		
 		msg = Utilities.escapeHTML(msg);
+		msg = msg.replace(/ /g, "&nbsp;");
 		msg = Utilities.fixLinks(msg);
 		msg = Utilities.enrich(msg);
 		msg = Emotes.parse(msg);
 		
-		var _msg = msg;
-		
-		if (!cmp(u, client.ownName())) // don't flash yourself ;)
-		{
-			var stalkwords = settings.stalkwords.copy();
-			stalkwords.push(client.ownName());
-			
-			for (var i = 0; i < stalkwords.length; i++)
-			{
-				msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s|\\!|\\?|\\.|\"|,|\\)|\\:|;)", "gi"), 
-					"$1<span style='background:%1'>$2</span><ping />$3".args(settings.flashColour));
-			}
-		}
-		
-		var flash = msg !== _msg;
-		cache.flash = flash;
+		var flash = false;
 		var ps = settings.paramSeparator;
 		
+		if (settings.flashes)
+		{
+			var _msg = msg;
+		
+			if (!cmp(u, client.ownName())) // don't flash yourself ;)
+			{
+				var stalkwords = settings.stalkwords.copy();
+				stalkwords.push(client.ownName());
+				
+				for (var i = 0; i < stalkwords.length; i++)
+				{
+					msg = msg.replace(new RegExp("(^|\\s)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s|\\!|\\?|\\.|\"|,|\\)|\\:|;)", "gi"), 
+						"$1<span style='background:%1'>$2</span><ping />$3".args(settings.flashColour));
+				}
+			}
+		
+			flash = msg !== _msg;
+		}
+		else
+		{
+			msg = msg.replace(/\<ping([^\>]+)\>/gi, "");
+		}
+		
+		cache.flash = flash;
 		cache.formattedMessage = msg;
 		
 		Plugins.callHooks("formattedMessage", { "user": u, "message": m, "formattedMessage": msg });
 		
 		msg = cache.formattedMessage;
 		
-		return "%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5%12%3:%13%6</a></font> %4%8"
+		return "%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5%3:%6</a></font> %4%8"
 				.args
 				(
 					colour, // 1
 					Emotes.parse(authSymbol), // 2
 					name, // 3
 					msg, // 4
-					(auth > 0 ? "<i>" : ""), // 5
-					(auth > 0 ? "</i>" : ""), // 6
+					authStyle, // 5
+					Utilities.endTags(authStyle), // 6
 					(flash ? "<i>" : ""), // 7
 					(flash ? "</i>" : ""), // 8
 					u, // 9
-					"<timestamp />" + u + ": " + Utilities.escapeHTML(m.replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F")), // 10 (this is to avoid a message of "> breaking the tags!
-					"style='text-decoration:none; color:" + colour + ";'",  // 11
-					authStyle, // 12
-					Utilities.endTags(authStyle) // 13
+					"<timestamp />" + u + ": " + Utilities.escapeHTML(m).replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"), // 10 (this is to avoid a message of "> breaking the tags!
+					"style='text-decoration:none; color:" + colour + ";'"  // 11
 				);
 	},
 	
@@ -1461,7 +1529,7 @@ Utilities =
 	},
 	
 	secondsFromString: function(str)
-	{	
+	{
 		var t = str;
 		
 		if (t.toLowerCase().endsWith("s"))
@@ -1686,7 +1754,7 @@ Commands =
 				return;
 			}
 			
-			if (commandTypes.indexOf(data[0]) === -1)
+			if (commandTypes.indexOf(data[0]) === -1 && !cmp(data[0], "secret"))
 			{
 				printMessage("That's not a type of command!");
 				return;
@@ -1867,7 +1935,8 @@ Commands =
 			
 			if (!cmp(data[0], "on") && !cmp(data[0], "off"))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "emotes on"), Utilities.commandLink("off", "emotes off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "emotes on"), Utilities.commandLink("off", "emotes off"), (settings.emotes ? "on" : "off")));
 				return;
 			}
 			
@@ -2183,7 +2252,8 @@ Commands =
 			{
 				if (!cmp(data[0], "on") && !cmp(data[0], "off"))
 				{
-					printMessage("%1 or %2?".args(Utilities.commandLink("On", "responses on"), Utilities.commandLink("off", "responses off")));
+					printMessage("%1 or %2? (Currently %3)"
+						.args(Utilities.commandLink("On", "responses on"), Utilities.commandLink("off", "responses off"), (settings.responsesOn ? "on" : "off")));
 					return;
 				}
 			
@@ -2294,7 +2364,8 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "allowdefine on"), Utilities.commandLink("off", "allowdefine off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "allowdefine on"), Utilities.commandLink("off", "allowdefine off"), (settings.allowDefine ? "on" : "off")));
 				return;
 			}
 			
@@ -2513,11 +2584,35 @@ Commands =
 			
 			printMessage("Your flash/stalkword colour was changed to: <span style='background:%1'>%1</span>".args(data[0]));
 		}
+		else if (command === "flash" || command === "flashes" || command === "setflash" || command === "setflashes")
+		{
+			if (params === 0 || !cmp(data[0], "on") && !cmp(data[0], "off"))
+			{
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "flashes on"), Utilities.commandLink("off", "flashes off"), (settings.flashes ? "on" : "off")));
+				return;
+			}
+			
+			var toggle = cmp(data[0], "on");
+			
+			settings.flashes = toggle;
+			Settings.save();
+			
+			if (toggle)
+			{
+				printMessage("<span style='background-color:%1'>Flashes</span> were enabled!");
+			}
+			else
+			{
+				printMessage("Flashes were disabled!");
+			}
+		}
 		else if (command === "enrichedtext" || command === "etext")
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "enrichedtext on"), Utilities.commandLink("off", "enrichedtext off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "enrichedtext on"), Utilities.commandLink("off", "enrichedtext off"), (settings.enrichedText ? "on" : "off")));
 				return;
 			}
 			
@@ -2529,7 +2624,8 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "fullwidth on"), Utilities.commandLink("off", "fullwidth off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "fullwidth on"), Utilities.commandLink("off", "fullwidth off"), (settings.fullwidth ? "on" : "off")));
 				return;
 			}
 			
@@ -2541,7 +2637,8 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "ignorechallenges on"), Utilities.commandLink("off", "ignorechallenges off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "ignorechallenges on"), Utilities.commandLink("off", "ignorechallenges off"), (settings.ignoreChallenges ? "on" : "off")));
 				return;
 			}
 			
@@ -2759,7 +2856,8 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "autoupdate on"), Utilities.commandLink("off", "autoupdate off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "autoupdate on"), Utilities.commandLink("off", "autoupdate off"), (settings.autoUpdate ? "on" : "off")));
 				return;
 			}
 			
@@ -2789,7 +2887,8 @@ Commands =
 		{
 			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
 			{
-				printMessage("%1 or %2?".args(Utilities.commandLink("On", "logevents on"), Utilities.commandLink("off", "logevents off")));
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "logevents on"), Utilities.commandLink("off", "logevents off"), (settings.logEvents ? "on" : "off")));
 				return;
 			}
 			
@@ -2838,7 +2937,7 @@ Commands =
 			Settings.save();
 			
 			printMessage((cmp(data[0], "txt") ? "Logs will be saved as *.txt files." : 
-				(cmp(data[0], "html") ? "Logs will be saved as *.html files." : "Logs will be saved as *.txt and *.html files.")));
+				(cmp(data[0], "html") ? "Logs will be saved as *.html files." : "Logs will be saved as *.txt AND *.html files.")));
 		}
 		else if (command === "reconnect" || command === "rc")
 		{
@@ -2867,7 +2966,7 @@ Commands =
 			
 			if (!url)
 			{
-				printMessage("Couldn't connect to Pastebin!");
+				printMessage("Couldn't connect to Pastebin! Bummer!");
 				return;
 			}
 			
@@ -2913,6 +3012,7 @@ Commands =
 			if (params === 0)
 			{
 				printMessage("Unset which timer?");
+				return;
 			}
 			
 			var isT = false;
@@ -2998,7 +3098,6 @@ Commands =
 						
 						var root = tier.split(" ")[0];
 						var type = tier.substr(tier.indexOf(" ") + 1);
-						
 						if (tierOrder.contains(type) && !cmp(type, "neu") && !cmp(type, "ubers")
 							&& tierList.contains(root + " " + tierOrder[tierOrder.indexOf(type) + 1]))
 						{
@@ -3018,6 +3117,7 @@ Commands =
 		{
 			print("<hr>");
 			printMessage("<b><u>Settings:</u></b>");
+			
 			for (var setting in settings)
 			{
 				if (settings.hasOwnProperty(setting))
@@ -3025,9 +3125,10 @@ Commands =
 					var s = settings[setting];
 					
 					printMessage("<b>%1:</b> %2"
-						.args(setting, Utilities.escapeHTML(s.toString() === "[object Object]" ? JSON.stringify(s).replace(/,/g, ", ").replace(/"/g, "") : s)));
+						.args(setting, Utilities.escapeHTML(s.toString() === "[object Object]" ? JSON.stringify(s) : s.toString())));
 				}
 			}
+			
 			print("<hr>");
 		}
 		else if (command === "setsetting")
@@ -3055,6 +3156,18 @@ Commands =
 			
 			printMessage("%1's value was cleared!".args(data[0]));
 		}
+		else if (command === "resetdefaults")
+		{
+			printMessage("Are you sure? " + Utilities.commandLink("Click", "doresetdefaults") + " to reset all settings to defaults (can't be undone probably!).");
+		}
+		else if (command === "doresetdefaults")
+		{
+			printMessage("Resetting... I... I'll miss you, %1...".args(client.ownName())); // sad :c
+			print("(you monster)");
+			settings = defaults;
+			Settings.save();
+			printMessage("BEEP BOOP FACTORY RESET COMPLETE"); // AM ROBO
+		}
 		
 		
 		
@@ -3066,6 +3179,7 @@ Commands =
 		{
 			acceptCommand = false;
 			say("/" + command + (params > 0 ? " " + data.join(settings.paramSeparator) : ""));
+			acceptCommand = true;
 		}
 	}
 	
@@ -3133,11 +3247,6 @@ PO =
 			}
 			
 			Commands.handle(command, data, channel);
-			
-			if (!acceptCommand)
-			{
-				acceptCommand = true;
-			}
 		
 			return;
 		}
@@ -3146,11 +3255,6 @@ PO =
 		message = Utilities.fullwidth(message);
 		
 		say(message, channel);
-		
-		if (!acceptCommand)
-		{
-			acceptCommand = true;
-		}
 	},
 	
 	beforeChannelMessage: function(message, channel, html)
@@ -3288,6 +3392,11 @@ PO =
 	},
 	beforeNewMessage: function(message, html)
 	{
+		if (!initCheck)
+		{
+			init();
+		}
+		
 		Plugins.callHooks("beforeNewMessage", { "message": message, "html": html });
 	}
 });
