@@ -30,13 +30,14 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.8.0";
-var VERSIONNAME = "mmmmmmmmmmmmmmmmmm";
+var VERSION = "0.9.8.1";
+var VERSIONNAME = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm";
 
 var WHATSNEW =
 [
 
-	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)"
+	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)",
+	"<h3>0.9.8.1</h3>• Emote bge"
 
 ].join("<br>");
 
@@ -722,6 +723,7 @@ Emotes =
 	
 	check: function(name)
 	{
+		name = name.replace(/_/g, " ");
 		return emotes.hasOwnProperty(name) || sys.pokeNum(name) > 0 || cmp(name, "missingno");
 	}
 });
