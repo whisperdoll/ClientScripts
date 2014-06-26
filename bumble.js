@@ -30,8 +30,8 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.8";
-var VERSIONNAME = "Nighttime is Scary";
+var VERSION = "0.9.7.9";
+var VERSIONNAME = "mmmmmmmmmmmmm";
 
 var WHATSNEW =
 [
@@ -42,7 +42,8 @@ var WHATSNEW =
 	"<h3>0.9.7.5</h3>• Enable/disable flashes, reset settings, fix buges, internal things",
 	"• Will now show multiple spaces",
 	"<h3>0.9.7.7</h3>• buges.....",
-	"<h3>0.9.7.8</h3>• buges.........."
+	"<h3>0.9.7.8</h3>• buges..........",
+	"<h3>0.9.7.9</h3>• buges................................."
 
 ].join("<br>");
 
@@ -1030,20 +1031,20 @@ Utilities =
 		
 		//if (settings.fullwidth)
 		//{
-			text = text.replace(/(^|\s|&nbsp;)＊(.+)＊($|\s|&nbsp;)/g, "$1*$2*$3").replace(/(^|\s|&nbsp;)＿(.+)＿($|\s|&nbsp)/g, "$1_$2_$3").replace(/(^|\s|&nbsp;)／(.+)／($|\s|&nbsp;)/g, "$1/$2/$3");
+			text = text.replace(/(^|\s|&nbsp;)＊(.+?)＊($|\s|&nbsp;)/g, "$1*$2*$3").replace(/(^|\s|&nbsp;)＿(.+?)＿($|\s|&nbsp)/g, "$1_$2_$3").replace(/(^|\s|&nbsp;)／(.+?)／($|\s|&nbsp;)/g, "$1/$2/$3");
 		//}
 		
-		var ret = text.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		var ret = text.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+?)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+?)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+?)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
 			
-		ret = ret.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		ret = ret.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+?)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+?)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+?)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
 			
-		ret = ret.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
-			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
+		ret = ret.replace(/(^|\s|&nbsp;|\<u\>|\<b\>)\/(.+?)\/($|\s|&nbsp;|\<\/u\>|\<\/b\>)/g, "$1<i>$2</i>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<b\>)_(.+?)_($|\s|&nbsp;|\<\/i\>|\<\/b\>)/g, "$1<u>$2</u>$3")
+			.replace(/(^|\s|&nbsp;|\<i\>|\<u\>)\*(.+?)\*($|\s|&nbsp;|\<\/i\>|\<\/u\>)/g, "$1<b>$2</b>$3");
 			
 		return ret;
 	},
