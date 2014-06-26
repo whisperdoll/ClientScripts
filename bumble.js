@@ -30,20 +30,13 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.7.9";
-var VERSIONNAME = "mmmmmmmmmmmmm";
+var VERSION = "0.9.8.0";
+var VERSIONNAME = "mmmmmmmmmmmmmmmmmm";
 
 var WHATSNEW =
 [
 
-	"<h3>0.9.7.3</h3>• Fixed BUGES",
-	"• Made things clicky with /tier and stuff",
-	"<h3>0.9.7.4</h3>• Overactive protection for when script speaks for you (like autoresponse)",
-	"<h3>0.9.7.5</h3>• Enable/disable flashes, reset settings, fix buges, internal things",
-	"• Will now show multiple spaces",
-	"<h3>0.9.7.7</h3>• buges.....",
-	"<h3>0.9.7.8</h3>• buges..........",
-	"<h3>0.9.7.9</h3>• buges................................."
+	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)"
 
 ].join("<br>");
 
@@ -1000,8 +993,9 @@ Utilities =
 	
 	fixLinks: function(message)
 	{
-		return message.replace(/([a-zA-Z]+:\/\/|www\.)([^&nbsp;]+)/ig, "<a href='$1$2'>$1$2</a>")
-			.replace(/([ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ]+：／／|ｗｗｗ．)([^&nbsp;']+)/ig, function(match)
+	
+		return message.replace(/([a-zA-Z]+:\/\/|www\.)((?:(?!&nbsp;).)+)/ig, "<a href='$1$2'>$1$2</a>")
+			.replace(/([ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ]+：／／|ｗｗｗ．)((?:(?!&nbsp;).)+)/ig, function(match)
 			{
 				return "<a href='%1'>%2</a>".args(Utilities.unfullwidth(match), match);
 			})
