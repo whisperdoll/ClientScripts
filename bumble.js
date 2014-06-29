@@ -30,14 +30,15 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.8.1";
-var VERSIONNAME = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm";
+var VERSION = "0.9.8.2";
+var VERSIONNAME = "do not speak me";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)",
-	"<h3>0.9.8.1</h3>• Emote bge"
+	"<h3>0.9.8.1</h3>• Emote bge",
+	"<h3>0.9.8.2</h3>• Ignore bug"
 
 ].join("<br>");
 
@@ -496,24 +497,52 @@ String.prototype.indexOf = function(str)
 	return -1;
 };
 
-String.prototype.startsWith = function(text)
+String.prototype.startsWith = function(text, ins)
 {
+	if (ins === undefined)
+		ins = false;
+		
 	var str = this;
 	
 	if (text.length > str.length)
 		return false;
-		
-	return str.substr(0, text.length) === text;
+	
+	if (!ins)
+		return str.substr(0, text.length) === text;
+	else
+		return cmp(str.substr(0, text.length), text)
 };
 
-String.prototype.endsWith = function(text)
+String.prototype.startsWithOne = function(arr, ins)
 {
+	var arg = arr;
+	
+	for (var i = 1; i < arg.length; i++)
+	{
+		if (this.startsWith(arg[i], ins))
+		{
+			cache.startsWithWhich = arg[i];
+			return true;
+		}
+	}
+	
+	return false;
+};
+
+String.prototype.endsWith = function(text, ins)
+{
+	if (ins === undefined)
+		ins = false;
+		
 	var str = this;
 	
 	if (text.length > str.length)
 		return false;
 		
-	return str.substr(str.length - text.length) === text;
+	if (!ins)
+		return str.substr(str.length - text.length) === text;
+	else
+		return cmp(str.substr(str.length - text.length), text);
 };
 
 String.prototype.trimString = function(str)
@@ -671,6 +700,7 @@ Emotes =
 		var ret = text;
 		
 		// we need to check to see if they did it in fullwidth, but we shouldn't just unfullwidth the whole thing //
+		// ahahahahaha you said "did it" //
 		
 		ret = ret.replace(/：([ｑｗｅｒｔｙｕｉｏｐａｓｄｆｇｈｊｋｌｚｘｃｖｂｎｍＱＷＥＲＴＹＵＩＯＰＡＳＤＦＧＨＪＫＬＺＸＣＶＢＮＭ１２３４５６７８９０＋－＿．＇！？　]+)：/g, function(match)
 		{
@@ -1057,9 +1087,12 @@ Utilities =
 		var fw = "﻿　｀１２３４５６７８９０－＝～！＠＃＄％＾＆＊（）＿＋ｑｗｅｒｔｙｕｉｏｐ［］＼ＱＷＥＲＴＹＵＩＯＰ｛｝｜ａｓｄｆｇｈｊｋｌ；＇ＡＳＤＦＧＨＪＫＬ：＂ｚｘｃｖｂｎｍ，．／ＺＸＣＶＢＮＭ＜＞？";
 		var nw = " `1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?";
 		
-		for (var i = 0; i < fw.length; i++)
+		for (var i = 0; i < text.length; i++)
 		{
-			ret = ret.replace(new RegExp(this.escapeRegex(nw[i]), "g"), fw[i]);
+			if (nw.contains(ret[i]))
+			{
+				ret[i] = fw[i];
+			}
 		}
 		
 		return ret;
@@ -1071,9 +1104,12 @@ Utilities =
 		var fw = "﻿　｀１２３４５６７８９０－＝～！＠＃＄％＾＆＊（）＿＋ｑｗｅｒｔｙｕｉｏｐ［］＼ＱＷＥＲＴＹＵＩＯＰ｛｝｜ａｓｄｆｇｈｊｋｌ；＇ＡＳＤＦＧＨＪＫＬ：＂ｚｘｃｖｂｎｍ，．／ＺＸＣＶＢＮＭ＜＞？";
 		var nw = " `1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?";
 		
-		for (var i = 0; i < fw.length; i++)
+		for (var i = 0; i < text.length; i++)
 		{
-			ret = ret.replace(new RegExp(fw[i], "g"), nw[i]);
+			if (fw.contains(ret[i]))
+			{
+				ret[i] = nw[i];
+			}
 		}
 		
 		return ret;
@@ -3214,7 +3250,7 @@ PO =
 		{	
 			sys.stopEvent();
 			
-			//message = message.replace(/\r/g, "").replace(/\n/g, "\\n"); // allows you to copy from notepad and things NO IT DOESNT
+			message = message.replace(/\r/g, "").replace(/\n/g, "\\n"); // allows you to copy from notepad and things NO IT DOESNT
 			
 			var pos = message.indexOf(" ");
 			var data;
@@ -3290,6 +3326,11 @@ PO =
 		if (Utilities.isPlayerOnline(u))
 		{
 			sys.stopEvent();
+			
+			if (client.isIgnored(sys.id(u)))
+			{
+				return;
+			}
 			
 			if (!cache.fakingLog)
 				Utilities.saveToLog(Utilities.formatMessage(m, u), channel, true);
