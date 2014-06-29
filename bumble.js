@@ -3327,7 +3327,7 @@ PO =
 		{
 			sys.stopEvent();
 			
-			if (client.isIgnored(sys.id(u)))
+			if (client.isIgnored(client.id(u)))
 			{
 				return;
 			}
