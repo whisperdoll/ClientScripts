@@ -753,8 +753,8 @@ Emotes =
 	
 	check: function(name)
 	{
-		name = name.replace(/_/g, " ");
-		return emotes.hasOwnProperty(name) || sys.pokeNum(name) > 0 || cmp(name, "missingno");
+		var pname = name.replace(/_/g, " ");
+		return emotes.hasOwnProperty(name) || sys.pokeNum(pname) > 0 || cmp(pname, "missingno");
 	}
 });
 
