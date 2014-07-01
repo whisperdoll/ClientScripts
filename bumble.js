@@ -30,15 +30,16 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.8.2";
-var VERSIONNAME = "do not speak me";
+var VERSION = "0.9.8.3";
+var VERSIONNAME = "unbelievable";
 
 var WHATSNEW =
 [
 
 	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)",
 	"<h3>0.9.8.1</h3>• Emote bge",
-	"<h3>0.9.8.2</h3>• Ignore bug"
+	"<h3>0.9.8.2</h3>• Ignore bug",
+	"<h3>0.9.8.3</h3>• Autoresponse bug"
 
 ].join("<br>");
 
@@ -174,7 +175,7 @@ var commands =
 	"[social]removelogchannel [channel] - Removes [channel] from the channels you're logging",
 	"[social]responses - Shows a list of your autoresponse keyphrases and responses",
 	"[social]responses [on/off] - Turns autoresponse on or off",
-	"[social]addresponse [keyphrase]((sep))[response] - Adds [response] to [keyphrase]",
+	"[social]addresponse [keyphrase]((sep))[response] - Adds [response] to [keyphrase] - You won't be able to trigger this yourself",
 	"[social]removeresponse [keyphrase]((sep))[response] - Removes [response] from [keyphrase]",
 	"[social]clearresponses [keyphrase] - Clears all responses from [keyphrase] and deletes [keyphrase]",
 	"[social]addblacklist [channel] - Adds [channel] to your autoresponse blacklist - Official channels are blacklisted by default",
@@ -3342,7 +3343,14 @@ PO =
 			if (settings.responsesOn && settings.responses.hasOwnProperty(m)
 				&& settings.responseBlacklist.indexOf(client.channelName(channel)) === -1)
 			{
-				say(settings.responses[m].randomItem());
+				if (cmp(u, client.ownName()))
+				{
+					// warn ?
+				}
+				else
+				{
+					say(settings.responses[m].randomItem());
+				}
 			}
 			
 			if (settings.allowDefine && m.toLowerCase().startsWith(client.ownName().toLowerCase() + "define "))
