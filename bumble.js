@@ -30,8 +30,8 @@
 
 // version things, caps bc thats how version things are. got a problem?! //
 
-var VERSION = "0.9.8.3";
-var VERSIONNAME = "unbelievable";
+var VERSION = "0.9.8.4";
+var VERSIONNAME = "the room";
 
 var WHATSNEW =
 [
@@ -39,7 +39,8 @@ var WHATSNEW =
 	"<h3>0.9.8.0</h3>• Dumb link buge (thanks us o)",
 	"<h3>0.9.8.1</h3>• Emote bge",
 	"<h3>0.9.8.2</h3>• Ignore bug",
-	"<h3>0.9.8.3</h3>• Autoresponse bug"
+	"<h3>0.9.8.3</h3>• Autoresponse bug",
+	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now"
 
 ].join("<br>");
 
@@ -3139,7 +3140,7 @@ Commands =
 						var root = tier.split(" ")[0];
 						var type = tier.substr(tier.indexOf(" ") + 1);
 						if (tierOrder.contains(type) && !cmp(type, "neu") && !cmp(type, "ubers")
-							&& tierList.contains(root + " " + tierOrder[tierOrder.indexOf(type) + 1]))
+							&& tierList.contains(root + " " + tierOrder[tierOrder.indexOf(type) - 1]))
 						{
 							pokeTiers.push(root + " " + tierOrder[tierOrder.indexOf(type) - 1]);
 						}
