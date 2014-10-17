@@ -481,16 +481,18 @@ Array.prototype.reverse = function()
 	return ret;
 }
 
-String.prototype.indexOf = function(str)
+String.prototype.indexOf = function(str, caseIns)
 {
 	if (str === undefined || str.length === 0 || str.length > this.length)
 		return -1;
+	if (caseIns === undefined)
+		caseIns = true;
 	if (cmp(str, this))
 		return 0;
 
 	for (var i = 0; i < this.length; i++)
 	{
-		if (cmp(this.substr(i, str.length), str))
+		if ((cmp(this.substr(i, str.length), str) && caseIns) || (this.substr(i, str.length) === str && !caseIns))
 		{
 			return i;
 		}
@@ -1093,7 +1095,7 @@ Utilities =
 		{
 			if (nw.contains(text[i]))
 			{
-				ret += fw[nw.indexOf(text[i])];
+				ret += fw[nw.indexOf(text[i], false)];
 			}
 		}
 		
