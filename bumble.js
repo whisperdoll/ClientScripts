@@ -1,10 +1,10 @@
 // Bumble // http://puu.sh/87TqH.png
 
-// TODO: ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// maybe make Commands.handle return a bool for if it threw an error or whatever, idk if this would be useful atm though   //
-// make plugins more traceable maybe                                                                                       //
-// we should make some default plugins or somethin so ppl think they're cool and not dumb, like why yell                   //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO: //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// maybe make Commands.handle return a bool for if it threw an error or whatever, idk if this would be useful atm though //
+// make plugins more traceable maybe                                                                                     //
+// we should make some default plugins or somethin so ppl think they're cool and not dumb, like why yell                 //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // pup //
 
@@ -28,7 +28,7 @@
    !-------------!
 */
 
-// version things, caps bc thats how version things are. got a problem?! //
+// version things, caps bc thats how version things are. //
 
 var VERSION = "0.9.8.4";
 var VERSIONNAME = "the room";
@@ -1003,7 +1003,7 @@ Utilities =
 			var amp = "&am" + "p;";
 			var lt = "&l" + "t;";
 			var gt = "&g" + "t;";
-			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt);
+			return text.replace(/&/g, amp).replace(/</g, lt).replace(/>/g, gt).replace(/\$/g, "&#36;");
 		}
 		
 		return "";
@@ -1085,15 +1085,15 @@ Utilities =
 		if (!settings.fullwidth && !force)
 			return text;
 			
-		var ret = text;
+		var ret = "";
 		var fw = "﻿　｀１２３４５６７８９０－＝～！＠＃＄％＾＆＊（）＿＋ｑｗｅｒｔｙｕｉｏｐ［］＼ＱＷＥＲＴＹＵＩＯＰ｛｝｜ａｓｄｆｇｈｊｋｌ；＇ＡＳＤＦＧＨＪＫＬ：＂ｚｘｃｖｂｎｍ，．／ＺＸＣＶＢＮＭ＜＞？";
 		var nw = " `1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?";
 		
 		for (var i = 0; i < text.length; i++)
 		{
-			if (nw.contains(ret[i]))
+			if (nw.contains(text[i]))
 			{
-				ret[i] = fw[i];
+				ret += fw[nw.indexOf(text[i])];
 			}
 		}
 		
@@ -1343,7 +1343,7 @@ Utilities =
 	plainText: function(string)
 	{
 		string = string.replace(/\<timestamp[^\>]+\>/gi, "");
-        return Utilities.unescapeHTML(string.replace(/(\<([^\>]+)\>)/g, ""));
+        return Utilities.unescapeHTML(string.replace(/(\<([^\>]+)\>)/g, "").replace(/&nbsp;/g, " "));
     },
 	
 	saveToLog: function(message, channel, isUserMessage)
@@ -3139,6 +3139,7 @@ Commands =
 						
 						var root = tier.split(" ")[0];
 						var type = tier.substr(tier.indexOf(" ") + 1);
+						
 						if (tierOrder.contains(type) && !cmp(type, "neu") && !cmp(type, "ubers")
 							&& tierList.contains(root + " " + tierOrder[tierOrder.indexOf(type) - 1]))
 						{
@@ -3393,6 +3394,24 @@ PO =
 			printMessage("%1 is <b><font color='green'>online!</font></b><ping />".args(Utilities.escapeHTML(client.name(id))));
 		}
 	},
+	/*onBattleStarted: function(bid, p1, p2, tier, mode)
+	{
+		if (!initCheck)
+		{
+			init();
+		}
+		
+		printMessage(client.name(p1) + " vs " + client.name(p2) + " in " + tier);
+	},
+	onBattleFinished: function(bid, winner, loser, res)
+	{
+		if (!initCheck)
+		{
+			init();
+		}
+		
+		printMessage(client.name(winner) + " won against " + client.name(loser) + "; res: " + res);
+	},1*/
 	onPlayerRemoved: function(id)
 	{
 		if (!initCheck)
@@ -3465,3 +3484,4 @@ PO =
 
 
 
+// this has been bumble by songisng i hope u had a good time //
