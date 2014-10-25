@@ -1104,7 +1104,7 @@ Utilities =
 	
 	unfullwidth: function(text)
 	{
-		var ret = text;
+		var ret = "";
 		var fw = "﻿　｀１２３４５６７８９０－＝～！＠＃＄％＾＆＊（）＿＋ｑｗｅｒｔｙｕｉｏｐ［］＼ＱＷＥＲＴＹＵＩＯＰ｛｝｜ａｓｄｆｇｈｊｋｌ；＇ＡＳＤＦＧＨＪＫＬ：＂ｚｘｃｖｂｎｍ，．／ＺＸＣＶＢＮＭ＜＞？";
 		var nw = " `1234567890-=~!@#$%^&*()_+qwertyuiop[]\\QWERTYUIOP{}|asdfghjkl;'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?";
 		
@@ -1112,7 +1112,7 @@ Utilities =
 		{
 			if (fw.contains(ret[i]))
 			{
-				ret[i] = nw[i];
+				ret += nw[[fw.indexOf(text[i], false)];
 			}
 		}
 		
@@ -1134,7 +1134,7 @@ Utilities =
 		{
 			if (keys.hasOwnProperty(key))
 			{
-				ret = ret.replace(new RegExp("(^|\\s|&nbsp;)" + this.escapeRegex(key) + "($|\\s|&nbsp;)", "g"), "$1" + keys[key] + "$2");
+				ret = ret.replace(new RegExpthis.escapeRegex(key), "g", keys[key]);
 			}
 		}
 		
