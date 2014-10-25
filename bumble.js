@@ -1112,7 +1112,7 @@ Utilities =
 		{
 			if (fw.contains(ret[i]))
 			{
-				ret += nw[[fw.indexOf(text[i], false)];
+				ret += nw[fw.indexOf(text[i], false)];
 			}
 		}
 		
@@ -1134,7 +1134,7 @@ Utilities =
 		{
 			if (keys.hasOwnProperty(key))
 			{
-				ret = ret.replace(new RegExpthis.escapeRegex(key), "g", keys[key]);
+				ret = ret.replace(new RegExp(this.escapeRegex(key), "g"), keys[key]);
 			}
 		}
 		
