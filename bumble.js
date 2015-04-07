@@ -30,8 +30,8 @@
 
 // version things, caps bc thats how version things are. //
 
-var VERSION = "0.9.8.4";
-var VERSIONNAME = "the room";
+var VERSION = "0.9.8.5";
+var VERSIONNAME = "melted snowman";
 
 var WHATSNEW =
 [
@@ -40,7 +40,8 @@ var WHATSNEW =
 	"<h3>0.9.8.1</h3>• Emote bge",
 	"<h3>0.9.8.2</h3>• Ignore bug",
 	"<h3>0.9.8.3</h3>• Autoresponse bug",
-	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now"
+	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now",
+	"<h3>0.9.8.5</h3>• fixed pastebin thing"
 
 ].join("<br>");
 
@@ -1492,7 +1493,7 @@ Utilities =
 				
 				for (var i = 0; i < stalkwords.length; i++)
 				{
-					msg = msg.replace(new RegExp("(^|\\s|&nbsp;)(" + Utilities.escapeRegex(stalkwords[i]) + ")($|\\s|&nbsp;|\\!|\\?|\\.|\"|,|\\)|\\:|;)", "gi"), 
+					msg = msg.replace(new RegExp("(^|\\s|&nbsp;)(" + Utilities.escapeRegex(stalkwords[i]).replace(/ /g, "&nbsp;") + ")($|\\s|&nbsp;|\\!|\\?|\\.|\"|,|\\)|\\:|;)", "gi"), 
 						"$1<span style='background:%1'>$2</span><ping />$3".args(settings.flashColour));
 				}
 			}
@@ -1801,6 +1802,43 @@ Commands =
 			}
 			
 			Commands.print(data[0].toLowerCase());
+		}
+		else if (command === "watamote")
+		{
+			var base = "http://www.mangareader.net/its-not-my-fault-that-im-not-popular/%1/%2";
+			sys.makeDir("watamote");
+			
+			var getAmt = function(html)
+			{
+				var i = html.indexOf("</select> of ") + 13;
+				var _html = html.substr(i);
+				
+				return _html.substr(0, _html.indexOf("/") - 1)
+			};
+			
+			// /eval first = Utilities.webCall("http://www.mangareader.net/its-not-my-fault-that-im-not-popular/%1/%2".args(1, 1)); var i = first.indexOf("</select> of "); var _html = html.substr(i); printMessage(_html);
+			
+			for (var chapter = 0; chapter < 72; chapter++)
+			{
+				var c = chapter + 1;
+				var dir = "watemote/" + c + "/";
+				
+				sys.makeDir(dir);
+				
+				var first = Utilities.webCall(base.args(c, 1));
+				var amt = getAmt(first);
+				
+				for (var page = 0; page < amt; page++)
+				{
+					var p = page + 1;
+					
+					var html = Utilities.webCall(base.args(c, p));
+					var img = html.substr(html.indexOf("src=\"http://") + 5);
+					img = img.substr(0, img.indexOf("\" "));
+					
+					Utilities.appendFile(dir + "list.txt", img + "\r\n");
+				}
+			}
 		}
 		else if (command === "setcs" || command === "setcommandsymbol")
 		{
@@ -2996,7 +3034,7 @@ Commands =
 			
 			var url = "http://pastebin.com/api/api_post.php";
 			var key = "2fbef099f110f4e1d489a8ad386270ad";
-			var post = { "api_dev_key": key, "api_option": "paste", "api_paste_code": data[0] };
+			var post = { "api_dev_key": key, "api_option": "paste", "api_paste_code": data[0].replace(/\\n/g, "\n") };
 			
 			if (params > 1)
 			{
