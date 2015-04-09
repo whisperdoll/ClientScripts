@@ -30,8 +30,8 @@
 
 // version things, caps bc thats how version things are. //
 
-var VERSION = "0.9.8.5";
-var VERSIONNAME = "melted snowman";
+var VERSION = "0.9.8.6";
+var VERSIONNAME = "listen";
 
 var WHATSNEW =
 [
@@ -41,7 +41,8 @@ var WHATSNEW =
 	"<h3>0.9.8.2</h3>• Ignore bug",
 	"<h3>0.9.8.3</h3>• Autoresponse bug",
 	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now",
-	"<h3>0.9.8.5</h3>• fixed pastebin thing"
+	"<h3>0.9.8.5</h3>• fixed pastebin thing",
+	"<h3>0.9.8.6</h3>• Added option to not have timestamps copy message to textbox for jinora"
 
 ].join("<br>");
 
@@ -120,7 +121,8 @@ var defaults =
 	"cleanSettings": true,
 	"overactiveLimit": 40,
 	"overactiveSeconds": 40,
-	"version": VERSION
+	"version": VERSION,
+	"timestampCopy": true
 };
 
 var settingsPath = "bumble.json";
@@ -1512,7 +1514,7 @@ Utilities =
 		
 		msg = cache.formattedMessage;
 		
-		return "%7<font color='%1'><a href=\"po:setmsg/%10\" %11><timestamp /></a><a href='po:send//lookup %9' %11>%2%5%3:%6</a></font> %4%8"
+		return "%7<font color='%1'>%10<timestamp />%11<a href='po:send//lookup %9' %12>%2%5%3:%6</a></font> %4%8"
 				.args
 				(
 					colour, // 1
@@ -1524,8 +1526,9 @@ Utilities =
 					(flash ? "<i>" : ""), // 7
 					(flash ? "</i>" : ""), // 8
 					u, // 9
-					"<timestamp />" + u + ": " + Utilities.escapeHTML(m).replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F"), // 10 (this is to avoid a message of "> breaking the tags!
-					"style='text-decoration:none; color:" + colour + ";'"  // 11
+					(settings.timestampCopy ? "<a href=\"po:setmsg/%1\" %12>".args("<timestamp />" + u + ": " + Utilities.escapeHTML(m).replace(/"/g, "&q" + "uot;").replace(/\?/g, "%3F")) : ""), // 10
+					(settings.timestampCopy ? "</a>" : ""), // 11
+					 "style='text-decoration:none; color:" + colour + ";'" // 12
 				);
 	},
 	
@@ -2946,6 +2949,20 @@ Commands =
 			Settings.save();
 			
 			printMessage((cmp(data[0], "on") ? "I'll check for updates when you log on!" : "I won't check for updates unless you tell me to!"));
+		}
+		else if (command === "timestampcopy" || command === "tscopy")
+		{
+			if (params === 0 || (!cmp(data[0], "on") && !cmp(data[0], "off")))
+			{
+				printMessage("%1 or %2? (Currently %3)"
+					.args(Utilities.commandLink("On", "timestampcopy on"), Utilities.commandLink("off", "timestampcopy off"), (settings.timestampCopy ? "on" : "off")));
+				return;
+			}
+			
+			settings.timestampCopy = cmp(data[0], "on");
+			Settings.save();
+			
+			printMessage((cmp(data[0], "on") ? "Clicking a timestamp will now copy it to the textbox!" : "Click a timestamp won't do anything!"));
 		}
 		else if (command === "whatsnew")
 		{
