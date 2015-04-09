@@ -193,6 +193,7 @@ var commands =
 	"[settings]clearauthsymbol [level] - Deletes any auth symbol used to denote [level]-level auth. [level] is still and integer from 0 to 4",
 	"[settings]setauthstyle [style]((sep))[level] - Changes style used to denote [level]-level auth. [style] should be opening HTML tags (&lt;b&gt;&lt;i&gt;)",
 	"[settings]flashes [on/off] - Enables or disables flashes",
+	"[settings]timestampcopy [on/off] - Enables or disables timestamp copying (click a timestamp to copy a message into the textbox)",
 	"[settings]setflashcolour [colour] - Changes the highlight colour of your name and stalkwords",
 	"[settings]setseparator [separator] - Sets the command parameter separator to [separator]",
 	"[settings]fullwidth [on/off] - Turns automatic text-to-fullwidth conversion on or off",
@@ -2962,7 +2963,7 @@ Commands =
 			settings.timestampCopy = cmp(data[0], "on");
 			Settings.save();
 			
-			printMessage((cmp(data[0], "on") ? "Clicking a timestamp will now copy it to the textbox!" : "Click a timestamp won't do anything!"));
+			printMessage((cmp(data[0], "on") ? "Clicking a timestamp will now copy it to the textbox!" : "Clicking a timestamp won't do anything!"));
 		}
 		else if (command === "whatsnew")
 		{
