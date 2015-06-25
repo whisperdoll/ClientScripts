@@ -30,8 +30,8 @@
 
 // version things, caps bc thats how version things are. //
 
-var VERSION = "0.9.8.6";
-var VERSIONNAME = "listen";
+var VERSION = "0.9.8.7";
+var VERSIONNAME = "rad sux";
 
 var WHATSNEW =
 [
@@ -42,7 +42,8 @@ var WHATSNEW =
 	"<h3>0.9.8.3</h3>• Autoresponse bug",
 	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now",
 	"<h3>0.9.8.5</h3>• fixed pastebin thing",
-	"<h3>0.9.8.6</h3>• Added option to not have timestamps copy message to textbox for jinora"
+	"<h3>0.9.8.6</h3>• Added option to not have timestamps copy message to textbox for jinora",
+   "<h3>0.9.8.7</h3>• Allow same response and keyphrase"
 
 ].join("<br>");
 
@@ -2242,14 +2243,6 @@ Commands =
 				printMessage("That's already one of your responses!");
 				cache.responseAdded = false;
 				cache.responseError = "That's already a response!";
-				return;
-			}
-			
-			if (cmp(data[0], data[1]))
-			{
-				printMessage("Response can't be the same as keyphrase!");
-				cache.responseAdded = false;
-				cache.responseError = "Response can't be the same as keyphrase!";
 				return;
 			}
 			
