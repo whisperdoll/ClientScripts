@@ -778,7 +778,7 @@ Plugins =
 		
 		if (typeof(files) === "undefined")
 		{
-			sys.makeDir(logPath);
+			sys.makeDir(pluginsPath);
 			files = [];
 		}
 		
