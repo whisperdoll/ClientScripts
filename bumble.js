@@ -30,7 +30,7 @@
 
 // version things, caps bc thats how version things are. //
 
-var VERSION = "0.9.8.7";
+var VERSION = "0.9.8.8";
 var VERSIONNAME = "rad sux";
 
 var WHATSNEW =
@@ -43,7 +43,8 @@ var WHATSNEW =
 	"<h3>0.9.8.4</h3>• /tiers is show more (all) tiers now",
 	"<h3>0.9.8.5</h3>• fixed pastebin thing",
 	"<h3>0.9.8.6</h3>• Added option to not have timestamps copy message to textbox for jinora",
-   "<h3>0.9.8.7</h3>• Allow same response and keyphrase"
+   "<h3>0.9.8.7</h3>• Allow same response and keyphrase",
+   "<h3>0.9.8.8</h3>• autorepsonse buge"
 
 ].join("<br>");
 
@@ -1637,7 +1638,7 @@ CustomCommands =
 
 
 Commands =
-({	
+({
 	add: function(type, name, params, desc, func, help)
 	{
 		var p = params.copy();
@@ -3402,7 +3403,7 @@ PO =
 				}
 				else
 				{
-					say(settings.responses[m].randomItem());
+					say(settings.responses[m].randomItem(), channel);
 				}
 			}
 			
